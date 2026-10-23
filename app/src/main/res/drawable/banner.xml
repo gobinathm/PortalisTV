@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 320x180 TV launcher banner: the icon mark on the left, the app name drawn as text by the launcher row. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="0"
+                android:endColor="#FF1B2433"
+                android:startColor="@color/window_background" />
+        </shape>
+    </item>
+    <item
+        android:width="180dp"
+        android:height="180dp"
+        android:gravity="center">
+        <vector
+            android:width="180dp"
+            android:height="180dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <path
+                android:fillColor="#00000000"
+                android:pathData="M38,74 L38,50 A16,16 0 0 1 70,50 L70,74"
+                android:strokeWidth="5"
+                android:strokeColor="#FFF2F3F5"
+                android:strokeLineCap="round" />
+            <path
+                android:fillColor="@color/brand_accent"
+                android:pathData="M49,52 L62,60 L49,68 Z" />
+        </vector>
+    </item>
+</layer-list>

@@ -1,0 +1,34 @@
+# Build output
+build/
+.gradle/
+.kotlin/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+output-metadata.json
+
+# Local configuration and secrets — never commit
+local.properties
+keystore.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+secrets/
+
+# Third-party binaries and reverse-engineering material must never enter this repo
+decompiled/
+research/
+*.smali
+
+# IDEs and OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+.fleet/
+
+# Personal assistant notes (local only)
+CLAUDE.local.md

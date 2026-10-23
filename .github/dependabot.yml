@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directories: ["/", "/build-logic"]
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      kotlin-and-agp:
+        patterns: ["org.jetbrains.kotlin*", "com.android.tools.build*", "com.google.devtools.ksp*"]
+      androidx:
+        patterns: ["androidx.*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
