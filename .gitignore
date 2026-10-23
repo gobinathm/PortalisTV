@@ -17,6 +17,7 @@ keystore.properties
 *.p12
 *.pem
 secrets/
+portal-check.properties
 
 # Third-party binaries and reverse-engineering material must never enter this repo
 decompiled/

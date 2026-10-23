@@ -1,4 +1,4 @@
-package io.github.gobinathm.portalistv.capture
+package io.github.gobinathm.portalistv.core.stalker
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -15,7 +15,8 @@ class CaptureRedactionTest {
 
     @Test
     fun `masks personal account fields`() {
-        val text = """{"fname":"Jane Doe","phone":"+49 151 0000","ip":"203.0.113.7","account_balance":12.5,"name":"News"}"""
+        val text = """{"fname":"Jane Doe","phone":"+49 151 0000","ip":"203.0.113.7",""" +
+            """"account_balance":12.5,"name":"News"}"""
         val redacted = redact(text)
         assertThat(redacted).doesNotContain("Jane")
         assertThat(redacted).doesNotContain("203.0.113.7")

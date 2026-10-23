@@ -47,8 +47,9 @@
 :feature:settings
 :benchmark             Macrobenchmark + Baseline Profile generator
 tools/mock-portal      local test portal with legal test streams
+tools/portal-check     command-line check of a real portal with the app's client
 ```
-Modules are added when the milestone that needs them starts; M0 shipped `:app`, `:core:common`, `:core:security`, `:core:designsystem` and `:feature:home`; M1 adds `:core:model`, `:core:catalog`, `:core:database`, `:core:data` and `:feature:profiles`.
+Modules are added when the milestone that needs them starts; M0 shipped `:app`, `:core:common`, `:core:security`, `:core:designsystem` and `:feature:home`; M1 adds `:core:model`, `:core:catalog`, `:core:database`, `:core:data` and `:feature:profiles`; M2 adds `:core:network`, `:core:stalker`, `tools/mock-portal` and `tools/portal-check`.
 
 **Dependency rule:** `feature → core:data → core:{stalker, database, …} → core:model`. Feature modules never depend on each other, and only `:app` wires navigation.
 

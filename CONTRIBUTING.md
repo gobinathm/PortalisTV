@@ -21,6 +21,8 @@ Thanks for helping. Please read this first; it is short.
    ./gradlew connectedDebugAndroidTest
    ```
 
+Without a provider, use the mock portal; to check a real portal without a TV, use the portal check. See [tools/README.md](tools/README.md).
+
 ## Project layout
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Build conventions live in `build-logic/`; modules should apply a `portalis.*` convention plugin instead of configuring Android or Kotlin directly. Versions live only in `gradle/libs.versions.toml`.
 

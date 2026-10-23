@@ -1,0 +1,14 @@
+# Copy to portal-check.properties (gitignored) and fill in. Used only by tools/portal-check.
+url=http://portal.example:8080/c/
+mac=00:1A:79:00:00:00
+# Required for plain http:// portals.
+allowInsecureHttp=true
+# Optional; defaults come from the device catalog.
+#model=MAG250
+#serial=
+#timezone=Europe/Berlin
+#language=en
+# Only if your provider requires them.
+#deviceId=
+#deviceId2=
+#signature=
