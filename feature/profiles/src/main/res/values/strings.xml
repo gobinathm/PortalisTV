@@ -7,6 +7,27 @@
     <string name="profiles_add">Add profile</string>
     <string name="profiles_unavailable">Your profiles can\'t be read on this device. The encryption key may have been reset.</string>
 
+    <!-- Backup -->
+    <string name="backup_export">Back up profiles</string>
+    <string name="backup_import">Restore from backup</string>
+    <string name="backup_password_title">Backup password</string>
+    <string name="backup_password_hint">At least 8 characters. You need it to restore the backup, and it can\'t be recovered.</string>
+    <string name="backup_password_too_short">Use at least 8 characters.</string>
+    <string name="backup_restore_password_hint">The password used when the backup was made.</string>
+    <string name="backup_working">Encrypting or decrypting. This takes a few seconds.</string>
+    <plurals name="backup_exported">
+        <item quantity="one">Backed up %d profile.</item>
+        <item quantity="other">Backed up %d profiles.</item>
+    </plurals>
+    <string name="backup_imported">Backup restored. Added: %1$d. Replaced: %2$d. Skipped as invalid: %3$d.</string>
+    <string name="backup_wrong_password">Wrong password, or the file is damaged.</string>
+    <string name="backup_not_a_backup">This file isn\'t a Portalis TV backup, or it was made by a newer version.</string>
+    <string name="backup_saved_to">Saved to %1$s. To keep it safe or move it to another device, copy it with adb pull.</string>
+    <string name="backup_choose">Choose a backup</string>
+    <string name="backup_none_found">No backups found. Copy a .ptvb backup file to %1$s with adb push, then try again.</string>
+    <string name="backup_no_file_picker">This device has no file manager and no shared storage for backups.</string>
+    <string name="backup_failed">The backup couldn\'t be completed.</string>
+
     <!-- Editor -->
     <string name="editor_title_new">New profile</string>
     <string name="editor_title_edit">Edit profile</string>

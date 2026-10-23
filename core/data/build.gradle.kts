@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.portalis.android.library)
     alias(libs.plugins.portalis.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -13,6 +14,9 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
     implementation(projects.core.common)
     implementation(projects.core.database)
+    implementation(projects.core.security)
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(testFixtures(projects.core.model))
+    testImplementation(libs.kotlinx.coroutines.test)
 }

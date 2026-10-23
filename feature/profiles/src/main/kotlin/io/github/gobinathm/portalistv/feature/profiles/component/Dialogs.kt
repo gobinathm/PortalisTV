@@ -158,3 +158,18 @@ fun ConfirmDialog(message: String, confirmLabel: String, onConfirm: () -> Unit, 
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
 }
+
+/** Shows a result or a progress note. Without [onDismiss] it has no button and cannot be closed. */
+@Composable
+fun MessageDialog(message: String, onDismiss: (() -> Unit)?) {
+    val focus = remember { FocusRequester() }
+    DialogFrame(onDismiss = onDismiss ?: {}) {
+        Text(message, style = MaterialTheme.typography.titleLarge)
+        if (onDismiss != null) {
+            Button(onClick = onDismiss, modifier = Modifier.focusRequester(focus)) {
+                Text(stringResource(R.string.editor_ok))
+            }
+            LaunchedEffect(Unit) { focus.requestFocus() }
+        }
+    }
+}

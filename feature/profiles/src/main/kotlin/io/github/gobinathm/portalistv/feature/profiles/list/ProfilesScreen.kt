@@ -38,6 +38,7 @@ import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.feature.profiles.R
+import io.github.gobinathm.portalistv.feature.profiles.backup.BackupActions
 
 private val TileSize = 168.dp
 private val AvatarSize = 72.dp
@@ -51,7 +52,7 @@ fun ProfilesScreen(
     viewModel: ProfilesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ProfilesContent(state, onOpen, onEdit, onAdd, modifier)
+    ProfilesContent(state, onOpen, onEdit, onAdd, modifier) { canExport -> BackupActions(canExport) }
 }
 
 @Composable
@@ -61,6 +62,7 @@ private fun ProfilesContent(
     onEdit: (Long) -> Unit,
     onAdd: () -> Unit,
     modifier: Modifier = Modifier,
+    actions: @Composable (canExport: Boolean) -> Unit = {},
 ) {
     Box(
         modifier = modifier
@@ -76,7 +78,7 @@ private fun ProfilesContent(
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center,
             )
-            is ProfilesUiState.Loaded -> ProfilePicker(state.profiles, onOpen, onEdit, onAdd)
+            is ProfilesUiState.Loaded -> ProfilePicker(state.profiles, onOpen, onEdit, onAdd, actions)
         }
     }
 }
@@ -87,6 +89,7 @@ private fun ProfilePicker(
     onOpen: (Long) -> Unit,
     onEdit: (Long) -> Unit,
     onAdd: () -> Unit,
+    actions: @Composable (canExport: Boolean) -> Unit,
 ) {
     val firstTile = remember { FocusRequester() }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.l)) {
@@ -120,6 +123,7 @@ private fun ProfilePicker(
                 )
             }
         }
+        actions(profiles.isNotEmpty())
     }
     LaunchedEffect(Unit) { firstTile.requestFocus() }
 }

@@ -22,6 +22,8 @@ interface ProfileRepository {
 
     suspend fun get(id: Long): Profile?
 
+    suspend fun getByUuid(uuid: String): Profile?
+
     /** Inserts a new profile (id 0) or updates an existing one. @return the profile's id. */
     suspend fun save(profile: Profile): Long
 
@@ -41,6 +43,9 @@ class LocalProfileRepository @Inject constructor(
         .flowOn(io)
 
     override suspend fun get(id: Long): Profile? = withContext(io) { dao.get(id)?.toModel()?.registerSecrets() }
+
+    override suspend fun getByUuid(uuid: String): Profile? =
+        withContext(io) { dao.getByUuid(uuid)?.toModel()?.registerSecrets() }
 
     override suspend fun save(profile: Profile): Long = withContext(io) {
         profile.registerSecrets()

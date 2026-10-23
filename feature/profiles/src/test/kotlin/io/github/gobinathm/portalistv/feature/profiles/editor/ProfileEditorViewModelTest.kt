@@ -149,6 +149,8 @@ private class FakeProfileRepository : ProfileRepository {
 
     override suspend fun get(id: Long): Profile? = store.value[id]
 
+    override suspend fun getByUuid(uuid: String): Profile? = store.value.values.firstOrNull { it.uuid == uuid }
+
     override suspend fun save(profile: Profile): Long {
         check(!failSaves) { "disk full" }
         saved += profile

@@ -74,6 +74,18 @@ Your profiles and settings are kept, as long as you sign with the same key.
 ## 6. Turn developer mode off (optional, recommended)
 After installing, you can turn **USB/Wireless debugging** off again. The app keeps working.
 
+## 7. Back up and move profiles (optional)
+On the profile screen, **Back up profiles** writes all profiles to a file encrypted with a password you choose, and **Restore from backup** reads one back. Profiles with the same identity are replaced; others are added. The password can't be recovered, so keep it somewhere safe.
+
+On TVs with a file manager, the app asks where to save or open the file. Most TVs, including Google TV, have none; the app then uses its own folder, which you reach with ADB (debugging must be on):
+```sh
+# Copy backups from the TV to your computer
+adb pull /sdcard/Android/data/io.github.gobinathm.portalistv/files/backups/ .
+# Copy a backup to another TV, then choose "Restore from backup" there
+adb push portalis-profiles-….ptvb /sdcard/Android/data/io.github.gobinathm.portalistv/files/backups/
+```
+This folder is deleted when the app is uninstalled, so copy backups off the TV before uninstalling. Debug builds use `io.github.gobinathm.portalistv.debug` in the path.
+
 ## Troubleshooting
 | Problem | Fix |
 |---|---|
