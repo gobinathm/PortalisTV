@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "defaultModel": "MAG250",
+  "apiVersions": {
+    "js": "343",
+    "stb": "146",
+    "playerEngine": "0x588"
+  },
+  "userAgents": [
+    {
+      "id": "default",
+      "name": "Default",
+      "value": "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3"
+    }
+  ],
+  "displayResolutions": ["720x576", "1280x720", "1920x1080", "3840x2160"],
+  "firmware": [
+    { "id": "0.2.16-234", "imageVersion": "216", "imageDate": "Fri Jan 15 15:20:44 EET 2016" },
+    { "id": "0.2.18-r14-pub-250", "imageVersion": "218", "imageDate": "Fri Jan 15 15:20:44 EET 2016" },
+    { "id": "0.2.18-r19-pub-250", "imageVersion": "218", "imageDate": "Mon Jun 12 11:04:49 EEST 2017" },
+    { "id": "0.2.18-r23-pub-254", "imageVersion": "218", "imageDate": "Wed Aug 29 10:49:26 EEST 2018" },
+    { "id": "220A6.6", "imageVersion": "220", "imageDate": "11 Apr 2016 14:26:36 GMT" },
+    { "id": "0.2.20-alpha6.15", "imageVersion": "220", "imageDate": "31 May 2016 11:53:45 GMT" },
+    { "id": "0.2.20-alpha7.7", "imageVersion": "220", "imageDate": "19 Aug 2016 17:06:25 GMT" },
+    { "id": "2.20.03-256", "imageVersion": "220", "imageDate": "Fri Jun 30 11:37:10 EEST 2017" },
+    { "id": "2.20.05-256-pub", "imageVersion": "220", "imageDate": "Thu Jul 12 18:20:04 EEST 2018" },
+    { "id": "Release-R6", "imageVersion": "218", "imageDate": "30 Nov 2012 14:43:29 GMT+0200" },
+    { "id": "0.2.18-r19-pub-270", "imageVersion": "218", "imageDate": "Mon Jun 12 11:44:43 EEST 2017" },
+    { "id": "0.2.18-r22-pub-270", "imageVersion": "0.2.18", "imageDate": "Tue Dec 19 11:33:53 EET 2017" },
+    { "id": "2.20.07r2-pub-324", "imageVersion": "220", "imageDate": "Tue Jul 10 13:13:00 EEST 2018" },
+    { "id": "2.20.09r4-pub-324", "imageVersion": "220", "imageDate": "Fri Jul 19 10:58:30 UTC 2019" },
+    { "id": "2.20.10-pub-324", "imageVersion": "220", "imageDate": "Mon Nov 18 13:54:46 UTC 2019" },
+    { "id": "2.20.03-pub-349", "imageVersion": "220", "imageDate": "Fri Aug 17 17:06:08 EEST 2018" },
+    { "id": "2.20.03-pub-351", "imageVersion": "220", "imageDate": "Thu May 31 14:11:57 EEST 2018" },
+    { "id": "2.20.02-r6-pub-420", "imageVersion": "220", "imageDate": "Fri Oct 4 10:13:21 UTC 2019" },
+    { "id": "2.20.02-pub-424", "imageVersion": "220", "imageDate": "Fri May 8 15:39:55 UTC 2020" },
+    { "id": "2.20.02-pub-520", "imageVersion": "220", "imageDate": "Thu Apr 29 15:17:55 EEST 2021" },
+    { "id": "2.20.02-pub-524", "imageVersion": "220", "imageDate": "Thu Apr 29 15:38:34 EEST 2021" }
+  ],
+  "models": [
+    { "id": "MAG200", "firmware": ["0.2.16-234"] },
+    { "id": "MAG245", "firmware": ["0.2.16-234"] },
+    { "id": "MAG245D", "firmware": ["0.2.16-234"] },
+    { "id": "MAG250", "firmware": ["0.2.16-234", "0.2.18-r14-pub-250", "0.2.18-r19-pub-250"], "defaultFirmware": "0.2.18-r19-pub-250" },
+    { "id": "MAG254", "firmware": ["0.2.18-r23-pub-254"] },
+    { "id": "MAG254W1", "firmware": ["0.2.18-r23-pub-254"] },
+    { "id": "MAG254W2", "firmware": ["0.2.18-r23-pub-254"] },
+    { "id": "MAG255", "firmware": ["0.2.18-r23-pub-254"] },
+    { "id": "MAG255W1", "firmware": ["0.2.18-r23-pub-254"] },
+    { "id": "MAG255W2", "firmware": ["0.2.18-r23-pub-254"] },
+    {
+      "id": "MAG256",
+      "firmware": ["220A6.6", "0.2.20-alpha6.15", "0.2.20-alpha7.7", "2.20.03-256", "2.20.05-256-pub"],
+      "defaultFirmware": "2.20.05-256-pub"
+    },
+    { "id": "MAG260", "firmware": ["Release-R6"] },
+    { "id": "MAG270", "firmware": ["0.2.18-r19-pub-270", "0.2.18-r22-pub-270"], "defaultFirmware": "0.2.18-r22-pub-270" },
+    { "id": "MAG275", "firmware": ["0.2.18-r19-pub-270"] },
+    { "id": "MAG322", "firmware": ["2.20.07r2-pub-324", "2.20.09r4-pub-324", "2.20.10-pub-324"], "defaultFirmware": "2.20.10-pub-324" },
+    { "id": "MAG324", "firmware": ["2.20.07r2-pub-324", "2.20.09r4-pub-324", "2.20.10-pub-324"], "defaultFirmware": "2.20.10-pub-324" },
+    { "id": "MAG349", "firmware": ["2.20.03-pub-349"] },
+    { "id": "MAG351", "firmware": ["2.20.03-pub-351"] },
+    { "id": "MAG352", "firmware": ["2.20.03-pub-351"] },
+    { "id": "MAG420", "firmware": ["2.20.02-r6-pub-420"] },
+    { "id": "MAG424", "firmware": ["2.20.02-pub-424"] },
+    { "id": "MAG424w3", "firmware": ["2.20.02-pub-424"] },
+    { "id": "MAG520", "firmware": ["2.20.02-pub-520"] },
+    { "id": "MAG524", "firmware": ["2.20.02-pub-524"] }
+  ]
+}
