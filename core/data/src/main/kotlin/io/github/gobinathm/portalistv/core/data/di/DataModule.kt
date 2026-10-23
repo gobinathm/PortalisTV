@@ -9,6 +9,8 @@ import io.github.gobinathm.portalistv.core.catalog.DeviceCatalog
 import io.github.gobinathm.portalistv.core.data.LocalProfileRepository
 import io.github.gobinathm.portalistv.core.data.ProfileDefaults
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
+import io.github.gobinathm.portalistv.core.data.source.PortalConfig
+import io.github.gobinathm.portalistv.core.network.HttpClients
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import javax.inject.Qualifier
@@ -35,5 +37,13 @@ abstract class DataModule {
 
         @Provides
         fun provideProfileDefaults(catalog: DeviceCatalog): ProfileDefaults = ProfileDefaults(catalog)
+
+        /** One client stack for the app, so all portals share a connection pool and dispatcher. */
+        @Provides
+        @Singleton
+        fun provideHttpClients(): HttpClients = HttpClients()
+
+        @Provides
+        fun providePortalConfig(catalog: DeviceCatalog): PortalConfig = PortalConfig(catalog)
     }
 }

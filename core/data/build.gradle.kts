@@ -15,6 +15,8 @@ dependencies {
     implementation(projects.core.common)
     implementation(projects.core.database)
     implementation(projects.core.security)
+    implementation(projects.core.network)
+    implementation(projects.core.stalker)
     implementation(libs.kotlinx.serialization.json)
 
     testImplementation(testFixtures(projects.core.model))
