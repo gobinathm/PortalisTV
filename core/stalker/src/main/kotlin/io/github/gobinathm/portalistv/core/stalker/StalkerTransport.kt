@@ -33,6 +33,7 @@ internal class StalkerTransport(
     private val config: StalkerConfig,
     private val referer: HttpUrl,
     private val maxBodyBytes: Long = DEFAULT_MAX_BODY_BYTES,
+    private val recorder: ExchangeRecorder = ExchangeRecorder.NONE,
 ) {
     suspend fun get(endpoint: HttpUrl, params: List<Pair<String, String>>, token: String?): Reply {
         val url = endpoint.newBuilder()
@@ -53,6 +54,7 @@ internal class StalkerTransport(
         client.newCall(request).await().use { response ->
             val body = response.readCapped()
             Log.d(TAG) { "$label -> HTTP ${response.code}, ${body.length} chars" }
+            recorder.record(Exchange(label, params, response.code, body))
             return when {
                 response.code == HTTP_UNAUTHORIZED || response.code == HTTP_FORBIDDEN -> Reply.AuthFailed
                 body.trimStart().startsWith(AUTH_FAILED_TEXT, ignoreCase = true) -> Reply.AuthFailed

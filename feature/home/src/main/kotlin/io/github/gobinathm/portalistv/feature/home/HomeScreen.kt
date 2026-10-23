@@ -1,6 +1,5 @@
 package io.github.gobinathm.portalistv.feature.home
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,26 +11,34 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.component.PosterCard
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
+import io.github.gobinathm.portalistv.core.model.LiveCategory
+import io.github.gobinathm.portalistv.core.model.LiveChannel
 
-private const val PLACEHOLDER_ITEMS = 12
-
-private val rows = listOf(R.string.home_row_continue, R.string.home_row_live, R.string.home_row_movies)
-
-/** Placeholder home until profiles and content arrive. Exercises D-pad focus across rows. */
+/** The selected profile's home: connection status and a first look at its live TV. */
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
-    val firstItem = remember { FocusRequester() }
+fun HomeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    HomeContent(state, onRetry = viewModel::retry, modifier = modifier)
+}
+
+@Composable
+private fun HomeContent(state: HomeUiState, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    val firstFocus = remember { FocusRequester() }
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -39,34 +46,73 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         contentPadding = PaddingValues(vertical = Spacing.screenVertical),
         verticalArrangement = Arrangement.spacedBy(Spacing.xl),
     ) {
-        item(key = "header") { Header() }
-        items(rows, key = { it }) { titleRes ->
-            PlaceholderRow(
-                titleRes = titleRes,
-                initialFocus = firstItem.takeIf { titleRes == rows.first() },
-            )
+        item(key = "header") { Header(state, onRetry, firstFocus.takeIf { state.error != null }) }
+        if (state.categories.isNotEmpty()) {
+            item(key = "categories") {
+                ContentRow(
+                    title = stringResource(R.string.home_row_categories, state.categories.size),
+                    items = state.categories,
+                    key = { it.id },
+                    label = LiveCategory::title,
+                    focus = firstFocus.takeIf { state.error == null },
+                )
+            }
+        }
+        if (state.channels.isNotEmpty()) {
+            item(key = "channels") {
+                ContentRow(
+                    title = stringResource(R.string.home_row_channels, state.totalChannels),
+                    items = state.channels,
+                    key = { it.id },
+                    label = { channel -> channel.number?.let { "$it  ${channel.name}" } ?: channel.name },
+                    focus = null,
+                )
+            }
         }
     }
-    LaunchedEffect(Unit) { firstItem.requestFocus() }
-}
-
-@Composable
-private fun Header() {
-    Column(Modifier.padding(horizontal = Spacing.screenHorizontal)) {
-        Text(stringResource(R.string.home_title), style = MaterialTheme.typography.displayMedium)
-        Text(
-            stringResource(R.string.home_subtitle),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    LaunchedEffect(state.error != null, state.categories.isNotEmpty()) {
+        runCatching { firstFocus.requestFocus() }
     }
 }
 
 @Composable
-private fun PlaceholderRow(@StringRes titleRes: Int, initialFocus: FocusRequester?) {
+private fun Header(state: HomeUiState, onRetry: () -> Unit, retryFocus: FocusRequester?) {
+    Column(
+        Modifier.padding(horizontal = Spacing.screenHorizontal),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s),
+    ) {
+        Text(state.profileName, style = MaterialTheme.typography.displayMedium)
+        val error = state.error
+        if (error != null) {
+            Text(stringResource(error.messageRes()), color = MaterialTheme.colorScheme.error)
+            state.portalMessage?.let { Text(stringResource(R.string.home_portal_says, it)) }
+            Button(
+                onClick = onRetry,
+                modifier = if (retryFocus != null) Modifier.focusRequester(retryFocus) else Modifier,
+            ) { Text(stringResource(R.string.home_retry)) }
+        } else {
+            Text(
+                stringResource(state.step.messageRes()),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        state.accountName?.let { Text(stringResource(R.string.home_account, it)) }
+        state.sampleStream?.let { Text(stringResource(R.string.home_stream_ok, it)) }
+    }
+}
+
+@Composable
+private fun <T> ContentRow(
+    title: String,
+    items: List<T>,
+    key: (T) -> Any,
+    label: (T) -> String,
+    focus: FocusRequester?,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
         Text(
-            stringResource(titleRes),
+            title,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = Spacing.screenHorizontal),
         )
@@ -74,23 +120,50 @@ private fun PlaceholderRow(@StringRes titleRes: Int, initialFocus: FocusRequeste
             contentPadding = PaddingValues(horizontal = Spacing.screenHorizontal),
             horizontalArrangement = Arrangement.spacedBy(Spacing.l),
         ) {
-            items((1..PLACEHOLDER_ITEMS).toList(), key = { it }) { index ->
+            items(items, key = key) { item ->
                 PosterCard(
-                    title = stringResource(R.string.home_placeholder_item, index),
+                    title = label(item),
                     onClick = {},
-                    modifier = if (index == 1 && initialFocus != null) {
-                        Modifier.focusRequester(initialFocus)
-                    } else {
-                        Modifier
-                    },
+                    modifier = if (item == items.first() && focus != null) Modifier.focusRequester(focus) else Modifier,
                 )
             }
         }
     }
 }
 
+private fun ConnectionStep.messageRes() = when (this) {
+    ConnectionStep.CONNECTING -> R.string.home_step_connecting
+    ConnectionStep.LOADING_CATEGORIES -> R.string.home_step_categories
+    ConnectionStep.LOADING_CHANNELS -> R.string.home_step_channels
+    ConnectionStep.RESOLVING_STREAM -> R.string.home_step_stream
+    ConnectionStep.DONE -> R.string.home_step_done
+}
+
+private fun ConnectionError.messageRes() = when (this) {
+    ConnectionError.INVALID_ADDRESS -> R.string.home_error_address
+    ConnectionError.NOT_FOUND -> R.string.home_error_not_found
+    ConnectionError.DEVICE_REFUSED -> R.string.home_error_refused
+    ConnectionError.AUTHORIZATION -> R.string.home_error_authorization
+    ConnectionError.BAD_RESPONSE -> R.string.home_error_bad_response
+    ConnectionError.NO_NETWORK -> R.string.home_error_network
+    ConnectionError.TIMEOUT -> R.string.home_error_timeout
+    ConnectionError.TLS -> R.string.home_error_tls
+    ConnectionError.UNKNOWN -> R.string.home_error_unknown
+}
+
 @Preview(device = "id:tv_1080p")
 @Composable
-private fun HomeScreenPreview() {
-    PortalisTheme { HomeScreen() }
+private fun HomePreview() {
+    PortalisTheme {
+        HomeContent(
+            HomeUiState(
+                profileName = "Living room",
+                step = ConnectionStep.DONE,
+                categories = listOf(LiveCategory("1", "News", adult = false)),
+                channels = listOf(LiveChannel("1", "Test Pattern", 1, null, "1", adult = false, playbackRef = "")),
+                totalChannels = 1,
+            ),
+            onRetry = {},
+        )
+    }
 }

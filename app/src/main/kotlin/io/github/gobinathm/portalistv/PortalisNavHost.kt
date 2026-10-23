@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.gobinathm.portalistv.feature.home.HomeScreen
+import io.github.gobinathm.portalistv.feature.home.HomeViewModel
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorViewModel
 import io.github.gobinathm.portalistv.feature.profiles.list.ProfilesScreen
@@ -20,8 +21,9 @@ private data object ProfilesRoute
 @Serializable
 private data class ProfileEditorRoute(val profileId: Long = 0)
 
+/** The property name is the argument key that [HomeViewModel.PROFILE_ID_ARG] reads. */
 @Serializable
-private data object HomeRoute
+private data class HomeRoute(val profileId: Long)
 
 /** The app's screens. Feature modules never navigate themselves; they report intents here. */
 @Composable
@@ -30,7 +32,7 @@ fun PortalisNavHost() {
     NavHost(navController = navController, startDestination = ProfilesRoute) {
         composable<ProfilesRoute> {
             ProfilesScreen(
-                onOpen = { navController.navigate(HomeRoute) },
+                onOpen = { id -> navController.navigate(HomeRoute(id)) },
                 onEdit = { id -> navController.navigate(ProfileEditorRoute(id)) },
                 onAdd = { navController.navigate(ProfileEditorRoute()) },
             )

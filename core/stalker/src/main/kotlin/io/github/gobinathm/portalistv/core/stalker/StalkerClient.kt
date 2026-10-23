@@ -21,9 +21,10 @@ class StalkerClient(
     httpClient: OkHttpClient,
     private val config: StalkerConfig,
     private val clock: () -> Long = System::currentTimeMillis,
+    recorder: ExchangeRecorder = ExchangeRecorder.NONE,
 ) {
     private val portalUrl: HttpUrl = PortalEndpoints.parse(config.portalUrl, config.allowInsecureHttp)
-    private val transport = StalkerTransport(httpClient, config, portalUrl)
+    private val transport = StalkerTransport(httpClient, config, portalUrl, recorder = recorder)
     private val sessionLock = Mutex()
 
     private var endpoint: HttpUrl? = null
@@ -31,8 +32,16 @@ class StalkerClient(
 
     init {
         // Values with no recognizable shape are masked wherever they appear in logs.
-        listOfNotNull(config.portalUrl, config.serial, config.deviceIds?.deviceId, config.deviceIds?.deviceId2)
-            .forEach(Redactor::register)
+        listOfNotNull(
+            config.portalUrl,
+            portalUrl.host,
+            config.serial,
+            config.deviceIds?.deviceId,
+            config.deviceIds?.deviceId2,
+            config.deviceIds?.signature,
+            config.login,
+            config.password,
+        ).forEach(Redactor::register)
     }
 
     /** Connects (or reconnects) and returns the portal's view of this device. */

@@ -2,7 +2,9 @@ package io.github.gobinathm.portalistv.core.data.source
 
 import io.github.gobinathm.portalistv.core.model.ContentSource
 import io.github.gobinathm.portalistv.core.model.Profile
+import io.github.gobinathm.portalistv.core.model.SourceException
 import io.github.gobinathm.portalistv.core.network.HttpClients
+import io.github.gobinathm.portalistv.core.stalker.ExchangeRecorder
 import io.github.gobinathm.portalistv.core.stalker.StalkerClient
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -12,19 +14,17 @@ import javax.inject.Singleton
 class ContentSources @Inject constructor(
     private val httpClients: HttpClients,
     private val portalConfig: PortalConfig,
+    private val recorder: ExchangeRecorder,
 ) {
     private val sources = mutableMapOf<Long, Pair<Profile, ContentSource>>()
 
-    /**
-     * @throws io.github.gobinathm.portalistv.core.stalker.InvalidPortalUrlException if the
-     * profile's portal URL cannot be used.
-     */
+    /** @throws SourceException with [SourceException.Reason.INVALID_ADDRESS] for an unusable portal URL. */
     @Synchronized
     fun forProfile(profile: Profile): ContentSource {
         // An edited profile gets a fresh session with its new settings.
         sources[profile.id]?.let { (cached, source) -> if (cached == profile) return source }
         val http = httpClients.forProfile(portalConfig.proxy(profile))
-        val client = StalkerClient(http, portalConfig.stalkerConfig(profile))
+        val client = mapErrors { StalkerClient(http, portalConfig.stalkerConfig(profile), recorder = recorder) }
         return StalkerContentSource(client).also { sources[profile.id] = profile to it }
     }
 }

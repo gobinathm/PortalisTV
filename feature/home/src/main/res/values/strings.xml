@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="home_title">Portalis TV</string>
-    <string name="home_subtitle">Add a profile for your own portal to get started.</string>
-    <string name="home_row_continue">Continue watching</string>
-    <string name="home_row_live">Live TV</string>
-    <string name="home_row_movies">Movies</string>
-    <string name="home_placeholder_item">Item %1$d</string>
+    <string name="home_row_categories">Live TV categories (%1$d)</string>
+    <string name="home_row_channels">Channels (%1$d in total)</string>
+    <string name="home_retry">Try again</string>
+    <string name="home_account">Portal account: %1$s</string>
+    <string name="home_portal_says">The portal says: %1$s</string>
+    <string name="home_stream_ok">Stream links work, for example %1$s</string>
+
+    <string name="home_step_connecting">Connecting to the portal…</string>
+    <string name="home_step_categories">Connected. Loading categories…</string>
+    <string name="home_step_channels">Loading channels…</string>
+    <string name="home_step_stream">Checking a stream link…</string>
+    <string name="home_step_done">Connected.</string>
+
+    <string name="home_error_address">The portal URL can\'t be used. Check the address, and allow insecure HTTP if it starts with http://.</string>
+    <string name="home_error_not_found">Nothing at this address answered like a portal. Check the address and the network.</string>
+    <string name="home_error_refused">The portal refused this device. Check that your provider registered the MAC address.</string>
+    <string name="home_error_authorization">The portal rejected the session. The device settings may not match what it expects.</string>
+    <string name="home_error_bad_response">The portal sent a reply this app doesn\'t understand yet.</string>
+    <string name="home_error_network">The portal\'s address can\'t be resolved. Check the network connection.</string>
+    <string name="home_error_timeout">The portal didn\'t answer in time.</string>
+    <string name="home_error_tls">A secure connection to the portal couldn\'t be established.</string>
+    <string name="home_error_unknown">The connection failed.</string>
 </resources>
