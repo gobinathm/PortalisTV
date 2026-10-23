@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.portalis.android.application)
     alias(libs.plugins.portalis.android.compose)
     alias(libs.plugins.portalis.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 // Release builds are signed with the builder's own key, created by scripts/create-signing-key.sh.
@@ -58,8 +59,12 @@ dependencies {
     implementation(projects.core.common)
     implementation(projects.core.designsystem)
     implementation(projects.core.security)
+    implementation(projects.core.data)
     implementation(projects.feature.home)
+    implementation(projects.feature.profiles)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
 }

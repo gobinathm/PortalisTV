@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Profile picker -->
+    <string name="profiles_title">Who\'s watching?</string>
+    <string name="profiles_hint">Press OK to open a profile. Hold OK to edit it.</string>
+    <string name="profiles_empty">Add a profile for your own portal to get started.</string>
+    <string name="profiles_add">Add profile</string>
+    <string name="profiles_unavailable">Your profiles can\'t be read on this device. The encryption key may have been reset.</string>
+
+    <!-- Editor -->
+    <string name="editor_title_new">New profile</string>
+    <string name="editor_title_edit">Edit profile</string>
+    <string name="editor_save">Save</string>
+    <string name="editor_delete">Delete</string>
+    <string name="editor_delete_confirm">Delete this profile? This can\'t be undone.</string>
+    <string name="editor_cancel">Cancel</string>
+    <string name="editor_ok">OK</string>
+    <string name="editor_fix_errors">Fix the highlighted fields to save.</string>
+    <string name="editor_save_failed">The profile couldn\'t be saved.</string>
+    <string name="editor_not_set">Not set</string>
+    <string name="editor_hidden">••••••</string>
+    <string name="editor_device_default">Device default</string>
+    <string name="editor_custom">Custom</string>
+    <string name="editor_default">Default</string>
+    <string name="editor_portal_default">Portal default</string>
+
+    <string name="section_general">General</string>
+    <string name="section_portal">Portal</string>
+    <string name="section_proxy">Proxy</string>
+    <string name="section_device">Device identity</string>
+    <string name="section_device_ids">Device ID</string>
+    <string name="section_firmware">Custom firmware</string>
+    <string name="section_hardware">Hardware</string>
+    <string name="section_compatibility">Compatibility</string>
+    <string name="section_playback">Playback</string>
+
+    <string name="field_name">Name</string>
+    <string name="field_portal_url">Portal URL</string>
+    <string name="field_language">Portal language</string>
+    <string name="field_timezone">Time zone</string>
+    <string name="field_timezone_hint">An IANA name such as Europe/Berlin; leave empty to use the device\'s.</string>
+    <string name="field_allow_http">Allow insecure HTTP</string>
+    <string name="field_allow_http_hint">Your MAC address and credentials are sent unencrypted.</string>
+    <string name="field_login">Login</string>
+    <string name="field_password">Password</string>
+    <string name="field_proxy_enabled">Use HTTP proxy</string>
+    <string name="field_proxy_host">Proxy host</string>
+    <string name="field_proxy_port">Proxy port</string>
+    <string name="field_proxy_username">Proxy username</string>
+    <string name="field_proxy_password">Proxy password</string>
+    <string name="field_stb_model">STB model</string>
+    <string name="field_firmware">Firmware</string>
+    <string name="field_user_agent">User agent</string>
+    <string name="field_custom_user_agent">Custom user agent</string>
+    <string name="field_resolution">Display resolution</string>
+    <string name="field_mac">MAC address</string>
+    <string name="field_mac_generate">Generate a random MAC address</string>
+    <string name="field_mac_generate_hint">Your provider must register the new address.</string>
+    <string name="field_serial">Serial number</string>
+    <string name="field_send_device_id">Send device ID</string>
+    <string name="field_device_id">Device ID</string>
+    <string name="field_device_id2">Device ID 2</string>
+    <string name="field_signature">Signature</string>
+    <string name="field_mac_based_device_id">MAC-based device ID</string>
+    <string name="field_reset_device_ids">Reset device IDs</string>
+    <string name="field_reset_device_ids_hint">Clears the IDs and creates a new random seed.</string>
+    <string name="field_player_engine_version">Player engine version</string>
+    <string name="field_player_engine_version_hint">A hex number such as 0x588.</string>
+    <string name="field_js_api_version">JS API version</string>
+    <string name="field_stb_api_version">STB API version</string>
+    <string name="field_image_version">Image version</string>
+    <string name="field_image_description">Image description</string>
+    <string name="field_image_date">Image date</string>
+    <string name="field_hardware_vendor">Hardware vendor</string>
+    <string name="field_hardware_version">Hardware version</string>
+    <string name="field_ministra_mode">Ministra compatibility mode</string>
+    <string name="field_emulator_detection">Let the portal detect an emulator</string>
+    <string name="field_player">Player</string>
+    <string name="field_player_vlc">Built-in (VLC)</string>
+    <string name="field_player_external">External app</string>
+    <string name="field_udpxy_enabled">Use UDPXY</string>
+    <string name="field_udpxy_url">UDPXY URL</string>
+    <string name="field_udpxy_protocol">Multicast protocol</string>
+    <string name="field_external_key_back">External player sends Back</string>
+    <string name="field_external_key_exit">External player sends Exit</string>
+    <string name="field_external_key_ok">External player sends OK</string>
+
+    <string name="error_name_required">Enter a name.</string>
+    <string name="error_url_required">Enter the portal URL.</string>
+    <string name="error_url_invalid">Enter a full http:// or https:// address.</string>
+    <string name="error_url_insecure">This is a plain HTTP address. Turn on \"Allow insecure HTTP\" to use it.</string>
+    <string name="error_mac_invalid">Use the format 00:1A:79:12:34:56.</string>
+    <string name="error_proxy_host_required">Enter the proxy host.</string>
+    <string name="error_proxy_port_invalid">Enter a port from 1 to 65535.</string>
+    <string name="error_udpxy_url_invalid">Enter a full http:// address.</string>
+</resources>

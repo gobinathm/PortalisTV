@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
-import io.github.gobinathm.portalistv.feature.home.HomeScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -13,7 +12,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             PortalisTheme {
-                HomeScreen()
+                PortalisNavHost()
             }
         }
     }

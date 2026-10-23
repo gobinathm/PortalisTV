@@ -13,7 +13,7 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 
 ## M1 — Profiles
 - [x] Encrypted Room database (SQLCipher) with migration tests
-- [ ] Create/edit profiles with the full identity and firmware catalog
+- [x] Create/edit profiles with the full identity and firmware catalog
 - [ ] Encrypted export and import
 
 ## M2 — Protocol
