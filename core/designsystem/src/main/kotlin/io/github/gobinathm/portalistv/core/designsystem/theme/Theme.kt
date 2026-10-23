@@ -1,6 +1,8 @@
 package io.github.gobinathm.portalistv.core.designsystem.theme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.darkColorScheme
 
@@ -25,5 +27,8 @@ fun PortalisTheme(
         error = TextColors.error,
         onError = TextColors.onError,
     )
-    MaterialTheme(colorScheme = colors, typography = PortalisTypography, content = content)
+    MaterialTheme(colorScheme = colors, typography = PortalisTypography) {
+        // Text outside a Surface would otherwise fall back to black.
+        CompositionLocalProvider(LocalContentColor provides colors.onBackground, content = content)
+    }
 }

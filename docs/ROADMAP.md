@@ -9,7 +9,7 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [x] `:core:security`: Keystore + Tink key management; redacting logger in `:core:common`
 - [x] CI: build, lint, detekt, unit tests, CodeQL, dependency review, Dependabot
 - [x] `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue and PR templates
-- [ ] Verified on a TV emulator or device
+- [x] Verified on a TV emulator or device
 
 ## M1 — Profiles
 - [ ] Encrypted Room database (SQLCipher) with migration tests
