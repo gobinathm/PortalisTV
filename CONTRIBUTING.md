@@ -16,6 +16,10 @@ Thanks for helping. Please read this first; it is short.
    ./gradlew detekt lint test assembleDebug
    ```
 4. Install a debug build on a TV or TV emulator: `./gradlew :app:installDebug`.
+5. With a TV emulator or device connected, run the on-device tests (encrypted database, migrations), which CI does not run yet:
+   ```sh
+   ./gradlew connectedDebugAndroidTest
+   ```
 
 ## Project layout
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Build conventions live in `build-logic/`; modules should apply a `portalis.*` convention plugin instead of configuring Android or Kotlin directly. Versions live only in `gradle/libs.versions.toml`.
@@ -30,8 +34,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Build conventions live in `bui
 Builds verify every dependency against `gradle/verification-metadata.xml` (SHA-256 checksums and PGP signatures). When you add or update a dependency, regenerate it and review the diff:
 ```sh
 ./gradlew --write-verification-metadata pgp,sha256 --export-keys --refresh-dependencies \
-  detekt lint test assembleDebug assembleRelease
+  detekt lint test assembleDebug assembleRelease assembleDebugAndroidTest
 ```
+Write mode can miss artifacts that are resolved only while the configuration cache is stored. If a normal build then reports unverified artifacts, compare each against the file in its repository and add its checksum by hand.
 New dependencies need a reason in the PR description and a license compatible with Apache-2.0.
 
 ## Commits and pull requests

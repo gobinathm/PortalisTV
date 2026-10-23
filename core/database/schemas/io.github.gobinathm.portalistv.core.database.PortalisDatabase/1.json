@@ -1,0 +1,288 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "baa1eade49f7f873576d1d3db55e713e",
+    "entities": [
+      {
+        "tableName": "profiles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `uuid` TEXT NOT NULL, `name` TEXT NOT NULL, `sort_order` INTEGER NOT NULL, `color` INTEGER, `created_at` INTEGER NOT NULL, `portal_url` TEXT NOT NULL, `portal_language` TEXT NOT NULL, `portal_timezone` TEXT, `portal_allow_insecure_http` INTEGER NOT NULL, `portal_login` TEXT, `portal_password` TEXT, `proxy_enabled` INTEGER NOT NULL, `proxy_host` TEXT NOT NULL, `proxy_port` INTEGER, `proxy_username` TEXT, `proxy_password` TEXT, `device_stb_model` TEXT NOT NULL, `device_user_agent` TEXT, `device_display_resolution` TEXT NOT NULL, `device_mac` TEXT NOT NULL, `device_serial` TEXT, `device_ids_send` INTEGER NOT NULL, `device_ids_id` TEXT, `device_ids_seed` TEXT, `device_ids_mac_based` INTEGER NOT NULL, `device_ids_id2` TEXT, `device_ids_signature` TEXT, `firmware_preset_id` TEXT, `firmware_player_engine_version` TEXT, `firmware_js_api_version` TEXT, `firmware_stb_api_version` TEXT, `firmware_image_version` TEXT, `firmware_image_description` TEXT, `firmware_image_date` TEXT, `hardware_vendor` TEXT, `hardware_version` TEXT, `compat_ministra_mode` INTEGER NOT NULL, `compat_allow_emulator_detection` INTEGER NOT NULL, `playback_engine` TEXT NOT NULL, `playback_udpxy_enabled` INTEGER NOT NULL, `playback_udpxy_url` TEXT, `playback_udpxy_protocol` TEXT, `playback_external_key_back` INTEGER NOT NULL, `playback_external_key_exit` INTEGER NOT NULL, `playback_external_key_ok` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uuid",
+            "columnName": "uuid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "color",
+            "columnName": "color",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAtMillis",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "portal.url",
+            "columnName": "portal_url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "portal.language",
+            "columnName": "portal_language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "portal.timezone",
+            "columnName": "portal_timezone",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "portal.allowInsecureHttp",
+            "columnName": "portal_allow_insecure_http",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "portal.login",
+            "columnName": "portal_login",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "portal.password",
+            "columnName": "portal_password",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "proxy.enabled",
+            "columnName": "proxy_enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "proxy.host",
+            "columnName": "proxy_host",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "proxy.port",
+            "columnName": "proxy_port",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "proxy.username",
+            "columnName": "proxy_username",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "proxy.password",
+            "columnName": "proxy_password",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "device.stbModel",
+            "columnName": "device_stb_model",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "device.userAgent",
+            "columnName": "device_user_agent",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "device.displayResolution",
+            "columnName": "device_display_resolution",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "device.mac",
+            "columnName": "device_mac",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "device.serial",
+            "columnName": "device_serial",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deviceIds.sendDeviceId",
+            "columnName": "device_ids_send",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceIds.deviceId",
+            "columnName": "device_ids_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deviceIds.seed",
+            "columnName": "device_ids_seed",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deviceIds.macBasedDeviceId",
+            "columnName": "device_ids_mac_based",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceIds.deviceId2",
+            "columnName": "device_ids_id2",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deviceIds.signature",
+            "columnName": "device_ids_signature",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firmware.presetId",
+            "columnName": "firmware_preset_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firmware.playerEngineVersion",
+            "columnName": "firmware_player_engine_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firmware.jsApiVersion",
+            "columnName": "firmware_js_api_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firmware.stbApiVersion",
+            "columnName": "firmware_stb_api_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firmware.imageVersion",
+            "columnName": "firmware_image_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firmware.imageDescription",
+            "columnName": "firmware_image_description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firmware.imageDate",
+            "columnName": "firmware_image_date",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "hardware.vendor",
+            "columnName": "hardware_vendor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "hardware.version",
+            "columnName": "hardware_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "compatibility.ministraMode",
+            "columnName": "compat_ministra_mode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "compatibility.allowEmulatorDetection",
+            "columnName": "compat_allow_emulator_detection",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playback.engine",
+            "columnName": "playback_engine",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playback.udpxyEnabled",
+            "columnName": "playback_udpxy_enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playback.udpxyUrl",
+            "columnName": "playback_udpxy_url",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "playback.udpxyProtocol",
+            "columnName": "playback_udpxy_protocol",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "playback.externalKeyBack",
+            "columnName": "playback_external_key_back",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playback.externalKeyExit",
+            "columnName": "playback_external_key_exit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playback.externalKeyOk",
+            "columnName": "playback_external_key_ok",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_profiles_uuid",
+            "unique": true,
+            "columnNames": [
+              "uuid"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_profiles_uuid` ON `${TABLE_NAME}` (`uuid`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'baa1eade49f7f873576d1d3db55e713e')"
+    ]
+  }
+}

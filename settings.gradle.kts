@@ -32,6 +32,8 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":app")
 include(":core:common")
+include(":core:model")
+include(":core:database")
 include(":core:security")
 include(":core:designsystem")
 include(":feature:home")

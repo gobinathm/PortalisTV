@@ -12,7 +12,7 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [x] Verified on a TV emulator or device
 
 ## M1 — Profiles
-- [ ] Encrypted Room database (SQLCipher) with migration tests
+- [x] Encrypted Room database (SQLCipher) with migration tests
 - [ ] Create/edit profiles with the full identity and firmware catalog
 - [ ] Encrypted export and import
 
