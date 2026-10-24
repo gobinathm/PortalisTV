@@ -23,6 +23,6 @@ There is no app-store release. You build the app and install it on your TV yours
 - [Privacy policy](PRIVACY.md)
 
 ## License
-[Apache License 2.0](LICENSE). Bundled third-party components keep their own licenses (libVLC is LGPL-2.1+). See `THIRD_PARTY_NOTICES.md` once it is added.
+The source code is licensed under the [Apache License 2.0](LICENSE). Built APKs include libVLC, whose prebuilt package contains GPL components, so **APKs are distributed under the GNU GPL v3**. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Portalis TV is an independent project. It is not affiliated with, endorsed by or connected to any set-top-box manufacturer or middleware vendor. Device and model names appear only where portals require them for compatibility.

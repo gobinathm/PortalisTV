@@ -19,7 +19,22 @@ android {
         applicationId = "io.github.gobinathm.portalistv"
         versionCode = 1
         versionName = "0.1.0"
-        ndk.abiFilters += setOf("arm64-v8a", "armeabi-v7a")
+    }
+
+    // TVs are ARM; libVLC also ships x86 libraries that would only bloat the universal APK.
+    packaging {
+        jniLibs.excludes += setOf("lib/x86/**", "lib/x86_64/**")
+    }
+
+    // One APK per CPU architecture: libVLC's native code is ~40 MB per architecture, and a TV needs
+    // only one. installDebug/installRelease pick the right APK; the universal one is for manual installs.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
+        }
     }
 
     signingConfigs {
@@ -62,6 +77,7 @@ dependencies {
     implementation(projects.core.data)
     implementation(projects.feature.home)
     implementation(projects.feature.profiles)
+    implementation(projects.player.vlc)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

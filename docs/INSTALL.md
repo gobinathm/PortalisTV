@@ -31,9 +31,9 @@ cd PortalisTV
 ./scripts/create-signing-key.sh     # one time: creates YOUR private signing key (kept out of git)
 ./gradlew :app:assembleRelease
 ```
-The first build downloads Gradle and the libraries and takes several minutes; later builds are much faster. The APK appears at `app/build/outputs/apk/release/app-release.apk`.
+The first build downloads Gradle and the libraries and takes several minutes; later builds are much faster. The APKs appear in `app/build/outputs/apk/release/`: `app-arm64-v8a-release.apk` for most current TVs, `app-armeabi-v7a-release.apk` for older 32-bit boxes, and `app-universal-release.apk`, which works on both but is larger.
 
-If you see `app-release-unsigned.apk` instead, the signing key is missing: run `./scripts/create-signing-key.sh` and build again. Unsigned APKs cannot be installed.
+If the file names end in `-unsigned.apk` instead, the signing key is missing: run `./scripts/create-signing-key.sh` and build again. Unsigned APKs cannot be installed.
 
 **Back up the signing key** (`keystore.properties` and `portalis-release.jks`). Updates must be signed with the same key. If you lose it, you have to uninstall the app before installing a new build, and your profiles are lost unless you exported a backup.
 
@@ -60,7 +60,7 @@ adb connect <tv-ip>:5555             # accept the prompt on the TV
 ```sh
 ./gradlew :app:installRelease
 # or
-adb install -r app/build/outputs/apk/release/app-release.apk
+adb install -r app/build/outputs/apk/release/app-universal-release.apk
 ```
 Portalis TV now appears in your TV's app list.
 
