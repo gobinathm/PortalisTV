@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="aspect_best_fit">Fit</string>
-    <string name="aspect_fill">Fill</string>
+    <string name="aspect_fill">Zoom to fill</string>
+    <string name="aspect_stretch">Stretch</string>
     <string name="aspect_16_9">16:9</string>
     <string name="aspect_4_3">4:3</string>
     <string name="aspect_original">Original</string>

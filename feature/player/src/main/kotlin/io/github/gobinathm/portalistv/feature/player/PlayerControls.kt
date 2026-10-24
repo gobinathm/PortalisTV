@@ -1,5 +1,6 @@
 package io.github.gobinathm.portalistv.feature.player
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,74 +17,150 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.Button
+import androidx.tv.material3.Icon
+import androidx.tv.material3.IconButton
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
-import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceDialog
-import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
-import io.github.gobinathm.portalistv.core.player.AspectMode
 import io.github.gobinathm.portalistv.core.player.PlaybackState
 import io.github.gobinathm.portalistv.core.player.PlaybackState.Status
 import io.github.gobinathm.portalistv.core.player.Player
 import io.github.gobinathm.portalistv.core.player.labelRes
 
-private const val SUBTITLES_OFF = "off"
 private const val MILLIS_PER_SECOND = 1000L
 private const val SECONDS_PER_MINUTE = 60
 private val ProgressHeight = 4.dp
+private val ControlSize = 56.dp
+private val ControlIconSize = 28.dp
 
-private enum class Picker { AUDIO, SUBTITLES, ASPECT }
+/** Dark enough behind the controls that text burned into the video doesn't compete with them. */
+private val ScrimColors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f), Color.Black.copy(alpha = 0.95f))
 
-/** Title, status and the playback buttons over a soft scrim at the bottom of the screen. */
+/** The side panels the control bar opens. */
+internal enum class PlayerPanel { TRACKS, PICTURE }
+
+/**
+ * The control bar: title, progress for seekable streams, and a row of icon buttons whose name shows
+ * under the focused one. [returnFocusTo] is the panel just closed, so its button gets focus back.
+ */
 @Composable
 internal fun ControlsOverlay(
     ui: PlayerUiState,
     playback: PlaybackState,
     player: Player,
+    returnFocusTo: PlayerPanel?,
+    onOpenPanel: (PlayerPanel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var picker by remember { mutableStateOf<Picker?>(null) }
-    val firstButton = remember { FocusRequester() }
+    val playFocus = remember { FocusRequester() }
+    val tracksFocus = remember { FocusRequester() }
+    val pictureFocus = remember { FocusRequester() }
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))))
-            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.screenVertical),
+            .background(Brush.verticalGradient(ScrimColors))
+            .padding(horizontal = Spacing.screenHorizontal)
+            .padding(top = Spacing.xl * 2, bottom = Spacing.screenVertical),
         verticalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
-        Text(
-            ui.channel?.let { listOfNotNull(it.number?.toString(), it.name).joinToString("  ") }.orEmpty(),
-            style = MaterialTheme.typography.headlineMedium,
-        )
-        if (playback.seekable && playback.durationMs > 0) Progress(playback)
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+        // Live HLS reports itself seekable within its short window; a progress bar there only confuses.
+        val live = ui.channel != null
+        TitleRow(ui, live)
+        if (!live && playback.seekable && playback.durationMs > 0) Progress(playback)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.l)) {
             val paused = playback.status == Status.PAUSED
-            Button(
+            ControlButton(
+                icon = if (paused) R.drawable.ic_player_play else R.drawable.ic_player_pause,
+                label = stringResource(if (paused) R.string.player_play else R.string.player_pause),
                 onClick = { if (paused) player.resume() else player.pause() },
-                modifier = Modifier.focusRequester(firstButton),
-            ) { Text(stringResource(if (paused) R.string.player_play else R.string.player_pause)) }
-            OutlinedButton(onClick = { picker = Picker.AUDIO }, enabled = playback.audioTracks.size > 1) {
-                Text(stringResource(R.string.player_audio))
-            }
-            OutlinedButton(onClick = { picker = Picker.SUBTITLES }, enabled = playback.subtitleTracks.isNotEmpty()) {
-                Text(stringResource(R.string.player_subtitles))
-            }
-            OutlinedButton(onClick = { picker = Picker.ASPECT }) {
-                Text(stringResource(R.string.player_aspect, stringResource(playback.aspect.labelRes())))
-            }
+                focusRequester = playFocus,
+            )
+            ControlButton(
+                icon = R.drawable.ic_player_subtitles,
+                label = stringResource(R.string.player_audio_subtitles),
+                onClick = { onOpenPanel(PlayerPanel.TRACKS) },
+                focusRequester = tracksFocus,
+            )
+            ControlButton(
+                icon = R.drawable.ic_player_aspect,
+                label = stringResource(R.string.player_aspect, stringResource(playback.aspect.labelRes())),
+                onClick = { onOpenPanel(PlayerPanel.PICTURE) },
+                focusRequester = pictureFocus,
+            )
         }
     }
-    LaunchedEffect(Unit) { runCatching { firstButton.requestFocus() } }
-    PickerDialog(picker, playback, player, onDismiss = { picker = null })
+    LaunchedEffect(Unit) {
+        val target = when (returnFocusTo) {
+            PlayerPanel.TRACKS -> tracksFocus
+            PlayerPanel.PICTURE -> pictureFocus
+            null -> playFocus
+        }
+        runCatching { target.requestFocus() }
+    }
+}
+
+@Composable
+private fun TitleRow(ui: PlayerUiState, live: Boolean) {
+    val channel = ui.channel ?: return
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+        if (live) {
+            Text(
+                stringResource(R.string.player_live),
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.White,
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.error, RoundedCornerShape(Spacing.xs))
+                    .padding(horizontal = Spacing.s, vertical = Spacing.xs),
+            )
+        }
+        channel.number?.let {
+            Text(
+                it.toString(),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(channel.name, style = MaterialTheme.typography.headlineMedium, maxLines = 1)
+    }
+}
+
+/** A round icon button; its name appears underneath while it has focus. */
+@Composable
+private fun ControlButton(
+    @DrawableRes icon: Int,
+    label: String,
+    onClick: () -> Unit,
+    focusRequester: FocusRequester,
+) {
+    var focused by remember { mutableStateOf(false) }
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier
+                .size(ControlSize)
+                .focusRequester(focusRequester)
+                .onFocusChanged { focused = it.isFocused },
+        ) {
+            Icon(painterResource(icon), contentDescription = label, modifier = Modifier.size(ControlIconSize))
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            modifier = Modifier.alpha(if (focused) 1f else 0f),
+        )
+    }
 }
 
 @Composable
@@ -102,48 +180,13 @@ private fun Progress(playback: PlaybackState) {
                     .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(ProgressHeight)),
             )
         }
-        Text(
-            "${formatTime(playback.positionMs)} / ${formatTime(playback.durationMs)}",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-    }
-}
-
-@Composable
-private fun PickerDialog(picker: Picker?, playback: PlaybackState, player: Player, onDismiss: () -> Unit) {
-    when (picker) {
-        null -> Unit
-        Picker.AUDIO -> ChoiceDialog(
-            title = stringResource(R.string.player_audio),
-            options = playback.audioTracks.map { ChoiceOption(it.id.toString(), it.name) },
-            selectedKey = playback.selectedAudioTrack?.toString(),
-            onSelect = {
-                player.selectAudioTrack(it.toInt())
-                onDismiss()
-            },
-            onDismiss = onDismiss,
-        )
-        Picker.SUBTITLES -> ChoiceDialog(
-            title = stringResource(R.string.player_subtitles),
-            options = listOf(ChoiceOption(SUBTITLES_OFF, stringResource(R.string.player_subtitles_off))) +
-                playback.subtitleTracks.map { ChoiceOption(it.id.toString(), it.name) },
-            selectedKey = playback.selectedSubtitleTrack?.toString() ?: SUBTITLES_OFF,
-            onSelect = {
-                player.selectSubtitleTrack(it.toIntOrNull())
-                onDismiss()
-            },
-            onDismiss = onDismiss,
-        )
-        Picker.ASPECT -> ChoiceDialog(
-            title = stringResource(R.string.player_aspect_title),
-            options = AspectMode.entries.map { ChoiceOption(it.name, stringResource(it.labelRes())) },
-            selectedKey = playback.aspect.name,
-            onSelect = {
-                player.setAspect(AspectMode.valueOf(it))
-                onDismiss()
-            },
-            onDismiss = onDismiss,
-        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(formatTime(playback.positionMs), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                "-" + formatTime((playback.durationMs - playback.positionMs).coerceAtLeast(0)),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
     }
 }
 

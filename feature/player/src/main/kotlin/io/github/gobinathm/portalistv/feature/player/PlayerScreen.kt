@@ -77,6 +77,9 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
     val playback by player.state.collectAsStateWithLifecycle()
     val inPip = pictureInPicture(enabled = ui.pictureInPicture)
     var overlayVisible by remember { mutableStateOf(true) }
+    var panel by remember { mutableStateOf<PlayerPanel?>(null) }
+    // The last panel closed, so its button gets focus back.
+    var lastPanel by remember { mutableStateOf<PlayerPanel?>(null) }
     // Bumped on every key press so the overlay's hide timer restarts.
     var interaction by remember { mutableIntStateOf(0) }
     val rootFocus = remember { FocusRequester() }
@@ -84,14 +87,26 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
     KeepScreenOn()
     BackgroundPlayback(onBackground = viewModel::onBackground, onForeground = viewModel::onForeground)
     BackHandler(enabled = overlayVisible) { overlayVisible = false }
-    LaunchedEffect(overlayVisible, interaction) {
-        if (overlayVisible) {
+    // Composed later, so it wins while a panel is open.
+    BackHandler(enabled = panel != null) {
+        lastPanel = panel
+        panel = null
+    }
+    LaunchedEffect(overlayVisible, interaction, panel) {
+        // Panels stay until closed; the control bar hides after a pause.
+        if (overlayVisible && panel == null) {
             delay(OVERLAY_TIMEOUT_MS)
             overlayVisible = false
+            lastPanel = null
         }
     }
     // A new channel shows its title briefly.
-    LaunchedEffect(ui.channel?.id) { if (ui.channel != null) overlayVisible = true }
+    LaunchedEffect(ui.channel?.id) {
+        if (ui.channel != null) {
+            lastPanel = null
+            overlayVisible = true
+        }
+    }
     LaunchedEffect(overlayVisible) { if (!overlayVisible) runCatching { rootFocus.requestFocus() } }
 
     Box(
@@ -109,11 +124,16 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
         player.VideoSurface(Modifier.fillMaxSize())
         // The small window shows only the picture.
         if (!inPip) PlaybackStatus(ui, playback, Modifier.align(Alignment.Center))
-        if (overlayVisible && !inPip) {
-            ControlsOverlay(
+        val openPanel = panel
+        when {
+            inPip -> Unit
+            openPanel != null -> SidePanel(openPanel, playback, player)
+            overlayVisible -> ControlsOverlay(
                 ui = ui,
                 playback = playback,
                 player = player,
+                returnFocusTo = lastPanel,
+                onOpenPanel = { panel = it },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }

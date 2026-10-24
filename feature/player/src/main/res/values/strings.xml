@@ -5,6 +5,9 @@
     <string name="player_audio">Audio</string>
     <string name="player_subtitles">Subtitles</string>
     <string name="player_subtitles_off">Off</string>
+    <string name="player_audio_subtitles">Audio &amp; subtitles</string>
+    <string name="player_audio_default">Default</string>
+    <string name="player_live">LIVE</string>
     <string name="player_aspect">Picture: %1$s</string>
     <string name="player_aspect_title">Picture size</string>
     <string name="player_loading">Loading…</string>

@@ -64,7 +64,8 @@ data class PlaybackState(
 
 data class Track(val id: Int, val name: String)
 
-enum class AspectMode { BEST_FIT, FILL, RATIO_16_9, RATIO_4_3, ORIGINAL }
+/** How the picture fits the screen. FILL zooms and crops the edges; STRETCH distorts instead. */
+enum class AspectMode { BEST_FIT, FILL, STRETCH, RATIO_16_9, RATIO_4_3, ORIGINAL }
 
 enum class PlayerError {
     /** The stream could not be opened or broke off. */

@@ -37,7 +37,10 @@ internal class VlcPlayer(
     verboseLogging: Boolean,
 ) : Player {
     // LibVLC appends its own defaults to the list it is given, so it must be mutable.
-    private val libVlc = LibVLC(context.applicationContext, ArrayList(vlcOptions(settings, verboseLogging)))
+    private val libVlc = LibVLC(
+        context.applicationContext,
+        ArrayList(vlcOptions(settings, verboseLogging, textSubtitles = VlcFonts.prepare(context))),
+    )
     private val mediaPlayer = MediaPlayer(libVlc)
     private val control = Executors.newSingleThreadExecutor { Thread(it, "Portalis-VLC") }
 
@@ -71,7 +74,7 @@ internal class VlcPlayer(
                     settings.hardwareDecoding == HardwareDecoding.ON,
                 )
                 addOption(":network-caching=${settings.networkCachingMs}")
-                media.userAgent?.let { addOption(":http-user-agent=$it") }
+                media.userAgent?.let { addOption(":http-user-agent=${httpSafeAgent(it)}") }
             }
             // Waits for the previous stream's input thread to close.
             mediaPlayer.media = vlcMedia
@@ -168,15 +171,14 @@ internal class VlcPlayer(
         const val DISABLED_TRACK = -1
         const val FULL_BUFFER = 100f
 
-        fun vlcOptions(settings: PlayerSettings, verbose: Boolean): List<String> = buildList {
+        fun vlcOptions(settings: PlayerSettings, verbose: Boolean, textSubtitles: Boolean): List<String> = buildList {
             // libVLC logs to logcat directly, bypassing the redacting logger, and its errors contain
             // stream URLs. Only debug builds get its messages.
             add(if (verbose) "-vv" else "--quiet")
             add("--http-reconnect")
-            // The FreeType renderer builds a fontconfig database of every system font on first use,
-            // which stalls the video thread for many seconds on TVs. Bitmap subtitles (DVB, teletext)
-            // still render; text subtitles need a bundled font setup first.
-            add("--text-renderer=none")
+            // Without the small font set (see VlcFonts), FreeType would index every system font and stall
+            // the video thread. Bitmap subtitles (DVB, teletext) render either way.
+            if (!textSubtitles) add("--text-renderer=none")
             add(if (settings.audioTimeStretch) "--audio-time-stretch" else "--no-audio-time-stretch")
             when (settings.deinterlace) {
                 Deinterlace.AUTO -> add("--deinterlace=-1")
@@ -190,7 +192,8 @@ internal class VlcPlayer(
 
         fun AspectMode.toScale(): MediaPlayer.ScaleType = when (this) {
             AspectMode.BEST_FIT -> MediaPlayer.ScaleType.SURFACE_BEST_FIT
-            AspectMode.FILL -> MediaPlayer.ScaleType.SURFACE_FILL
+            AspectMode.FILL -> MediaPlayer.ScaleType.SURFACE_FIT_SCREEN
+            AspectMode.STRETCH -> MediaPlayer.ScaleType.SURFACE_FILL
             AspectMode.RATIO_16_9 -> MediaPlayer.ScaleType.SURFACE_16_9
             AspectMode.RATIO_4_3 -> MediaPlayer.ScaleType.SURFACE_4_3
             AspectMode.ORIGINAL -> MediaPlayer.ScaleType.SURFACE_ORIGINAL
