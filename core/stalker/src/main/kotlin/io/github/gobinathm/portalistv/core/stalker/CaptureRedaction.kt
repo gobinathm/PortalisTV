@@ -15,6 +15,8 @@ object CaptureRedaction {
         // Hosts in URLs, also JSON-escaped ("http:\/\/host"). Keeps scheme and path shape.
         Regex("""(?i)\b(https?|rtsp|rtp|udp):((?:\\?/){2})(?:[^/\\\s"'@]*@)?[^/\\\s"':?]+""") to
             "$1:$2host.invalid",
+        // IP addresses anywhere, e.g. a provider's storage servers listed in get_profile.
+        Regex("""\b(?:\d{1,3}\.){3}\d{1,3}\b""") to "192.0.2.1",
         // Personal fields in JSON.
         Regex("""(?i)"($personalKeys)"\s*:\s*"[^"]*"""") to "\"$1\":\"$MASK\"",
         Regex("""(?i)"($personalKeys)"\s*:\s*(-?\d+(?:\.\d+)?)""") to "\"$1\":0",

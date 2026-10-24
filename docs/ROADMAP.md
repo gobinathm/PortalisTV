@@ -20,7 +20,7 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [x] Stalker client: discovery, handshake, profile, genres, channels, stream links
 - [x] `tools/mock-portal` with legal test streams; `tools/portal-check` for real portals
 - [x] Fixture-based tests, and end-to-end tests against the mock portal
-- [ ] Verified against a real portal; recorded, redacted replies added as fixtures
+- [x] Verified against a real portal; reply shapes recorded as synthetic fixtures
 
 ## M3 — Player
 - [ ] libVLC playback, on-screen controls, audio and subtitle tracks, aspect ratio

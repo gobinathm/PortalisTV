@@ -15,7 +15,7 @@
 
     <string name="home_error_address">The portal URL can\'t be used. Check the address, and allow insecure HTTP if it starts with http://.</string>
     <string name="home_error_not_found">Nothing at this address answered like a portal. Check the address and the network.</string>
-    <string name="home_error_refused">The portal refused this device. Check that your provider registered the MAC address.</string>
+    <string name="home_error_refused">The portal refused this device. Check that the MAC address is registered with your provider, and that the serial number (and device IDs, if your provider uses them) match your registered box. The portal\'s message may name the wrong field.</string>
     <string name="home_error_authorization">The portal rejected the session. The device settings may not match what it expects.</string>
     <string name="home_error_bad_response">The portal sent a reply this app doesn\'t understand yet.</string>
     <string name="home_error_network">The portal\'s address can\'t be resolved. Check the network connection.</string>

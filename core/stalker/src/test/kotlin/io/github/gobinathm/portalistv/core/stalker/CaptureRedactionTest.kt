@@ -33,4 +33,11 @@ class CaptureRedactionTest {
         assertThat(redacted).doesNotContain("12:34:56")
         assertThat(redacted).contains("stream=1")
     }
+
+    @Test
+    fun `masks ip addresses in any field`() {
+        val redacted = redact("""{"storage_name":"PVR","storage_ip":"198.51.100.23"}""")
+        assertThat(redacted).doesNotContain("198.51.100.23")
+        assertThat(redacted).contains("\"storage_name\":\"PVR\"")
+    }
 }

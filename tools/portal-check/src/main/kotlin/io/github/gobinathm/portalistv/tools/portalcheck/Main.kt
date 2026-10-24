@@ -8,6 +8,7 @@ import io.github.gobinathm.portalistv.core.model.Portal
 import io.github.gobinathm.portalistv.core.model.Profile
 import io.github.gobinathm.portalistv.core.model.Secret
 import io.github.gobinathm.portalistv.core.network.HttpClients
+import io.github.gobinathm.portalistv.core.stalker.AccountBlockedException
 import io.github.gobinathm.portalistv.core.stalker.CaptureRedaction
 import io.github.gobinathm.portalistv.core.stalker.DeviceIds
 import io.github.gobinathm.portalistv.core.stalker.ExchangeRecorder
@@ -73,6 +74,7 @@ private suspend fun runSteps(client: StalkerClient): Boolean {
         result.onSuccess { println("OK    $name: $it") }
         result.onFailure { e ->
             println("FAIL  $name: ${e.javaClass.simpleName}: ${Redactor.redact(e.message.orEmpty())}")
+            (e as? AccountBlockedException)?.portalMessage?.let { println("      portal says: ${Redactor.redact(it)}") }
             e.cause?.let { cause ->
                 println("      caused by ${cause.javaClass.simpleName}: ${Redactor.redact(cause.message.orEmpty())}")
             }
