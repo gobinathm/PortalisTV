@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Portal addresses are entered by the user, so plain HTTP can't be allowed per domain here.
+  The platform permits it, and the app enforces the per-profile "Allow insecure HTTP" opt-in
+  before any request is made (PortalEndpoints.parse). Only system certificate authorities are trusted.
+-->
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <base-config
+        cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

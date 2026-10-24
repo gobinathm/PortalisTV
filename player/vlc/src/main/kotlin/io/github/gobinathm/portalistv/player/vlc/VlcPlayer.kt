@@ -23,16 +23,23 @@ import org.videolan.libvlc.LibVLC
 import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
 import org.videolan.libvlc.util.VLCVideoLayout
+import java.util.concurrent.Executors
 
-/** [Player] on libVLC. Create and use it on the main thread; libVLC delivers events there too. */
+/**
+ * [Player] on libVLC. Create and use it on the main thread; libVLC delivers events there too.
+ * Calls that can block on the network (changing media, stopping, seeking) run in order on a
+ * private thread, so a stalled stream never freezes the UI.
+ */
 @Suppress("TooManyFunctions") // Most are the Player interface.
 internal class VlcPlayer(
     context: Context,
     private val settings: PlayerSettings,
     verboseLogging: Boolean,
 ) : Player {
-    private val libVlc = LibVLC(context.applicationContext, vlcOptions(settings, verboseLogging))
+    // LibVLC appends its own defaults to the list it is given, so it must be mutable.
+    private val libVlc = LibVLC(context.applicationContext, ArrayList(vlcOptions(settings, verboseLogging)))
     private val mediaPlayer = MediaPlayer(libVlc)
+    private val control = Executors.newSingleThreadExecutor { Thread(it, "Portalis-VLC") }
 
     private val _state = MutableStateFlow(PlaybackState(aspect = settings.defaultAspect))
     override val state: StateFlow<PlaybackState> = _state.asStateFlow()
@@ -56,37 +63,40 @@ internal class VlcPlayer(
     }
 
     override fun play(media: MediaSource) {
-        val vlcMedia = Media(libVlc, media.url.toUri()).apply {
-            setHWDecoderEnabled(
-                settings.hardwareDecoding != HardwareDecoding.OFF,
-                settings.hardwareDecoding == HardwareDecoding.ON,
-            )
-            addOption(":network-caching=${settings.networkCachingMs}")
-            media.userAgent?.let { addOption(":http-user-agent=$it") }
-        }
-        mediaPlayer.media = vlcMedia
-        // The player holds its own reference.
-        vlcMedia.release()
         _state.value = PlaybackState(status = Status.OPENING, aspect = _state.value.aspect)
-        mediaPlayer.play()
+        control.execute {
+            val vlcMedia = Media(libVlc, media.url.toUri()).apply {
+                setHWDecoderEnabled(
+                    settings.hardwareDecoding != HardwareDecoding.OFF,
+                    settings.hardwareDecoding == HardwareDecoding.ON,
+                )
+                addOption(":network-caching=${settings.networkCachingMs}")
+                media.userAgent?.let { addOption(":http-user-agent=$it") }
+            }
+            // Waits for the previous stream's input thread to close.
+            mediaPlayer.media = vlcMedia
+            // The player holds its own reference.
+            vlcMedia.release()
+            mediaPlayer.play()
+        }
     }
 
-    override fun pause() = mediaPlayer.pause()
+    override fun pause() = control.execute { mediaPlayer.pause() }
 
-    override fun resume() = mediaPlayer.play()
+    override fun resume() = control.execute { mediaPlayer.play() }
 
     override fun seekTo(positionMs: Long) {
-        if (_state.value.seekable) mediaPlayer.setTime(positionMs.coerceAtLeast(0), FAST_SEEK)
+        if (_state.value.seekable) control.execute { mediaPlayer.setTime(positionMs.coerceAtLeast(0), FAST_SEEK) }
     }
 
-    override fun stop() = mediaPlayer.stop()
+    override fun stop() = control.execute { mediaPlayer.stop() }
 
-    override fun selectAudioTrack(id: Int) {
+    override fun selectAudioTrack(id: Int) = control.execute {
         mediaPlayer.setAudioTrack(id)
         refreshTracks()
     }
 
-    override fun selectSubtitleTrack(id: Int?) {
+    override fun selectSubtitleTrack(id: Int?) = control.execute {
         mediaPlayer.setSpuTrack(id ?: DISABLED_TRACK)
         refreshTracks()
     }
@@ -98,9 +108,12 @@ internal class VlcPlayer(
 
     override fun release() {
         mediaPlayer.setEventListener(null)
-        mediaPlayer.stop()
-        mediaPlayer.release()
-        libVlc.release()
+        control.execute {
+            mediaPlayer.stop()
+            mediaPlayer.release()
+            libVlc.release()
+        }
+        control.shutdown()
     }
 
     private fun onEvent(event: MediaPlayer.Event) {
@@ -160,6 +173,10 @@ internal class VlcPlayer(
             // stream URLs. Only debug builds get its messages.
             add(if (verbose) "-vv" else "--quiet")
             add("--http-reconnect")
+            // The FreeType renderer builds a fontconfig database of every system font on first use,
+            // which stalls the video thread for many seconds on TVs. Bitmap subtitles (DVB, teletext)
+            // still render; text subtitles need a bundled font setup first.
+            add("--text-renderer=none")
             add(if (settings.audioTimeStretch) "--audio-time-stretch" else "--no-audio-time-stretch")
             when (settings.deinterlace) {
                 Deinterlace.AUTO -> add("--deinterlace=-1")

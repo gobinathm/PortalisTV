@@ -1,7 +1,9 @@
 package io.github.gobinathm.portalistv.core.stalker
 
 import io.github.gobinathm.portalistv.core.common.log.Log
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -51,16 +53,22 @@ internal class StalkerTransport(
             .build()
 
         val label = params.filter { it.first == "type" || it.first == "action" }.joinToString("/") { it.second }
-        client.newCall(request).await().use { response ->
-            val body = response.readCapped()
-            Log.d(TAG) { "$label -> HTTP ${response.code}, ${body.length} chars" }
-            recorder.record(Exchange(label, params, response.code, body))
-            return when {
-                response.code == HTTP_UNAUTHORIZED || response.code == HTTP_FORBIDDEN -> Reply.AuthFailed
-                body.trimStart().startsWith(AUTH_FAILED_TEXT, ignoreCase = true) -> Reply.AuthFailed
-                !response.isSuccessful -> throw ProtocolException("HTTP ${response.code} for $label")
-                else -> Reply.Ok(parseEnvelope(body, label))
-            }
+        // The body streams from the socket after the headers arrive, so reading, closing and parsing
+        // it must stay off the caller's (often the main) thread.
+        return withContext(Dispatchers.IO) {
+            client.newCall(request).await().use { reply(it, label, params) }
+        }
+    }
+
+    private fun reply(response: Response, label: String, params: List<Pair<String, String>>): Reply {
+        val body = response.readCapped()
+        Log.d(TAG) { "$label -> HTTP ${response.code}, ${body.length} chars" }
+        recorder.record(Exchange(label, params, response.code, body))
+        return when {
+            response.code == HTTP_UNAUTHORIZED || response.code == HTTP_FORBIDDEN -> Reply.AuthFailed
+            body.trimStart().startsWith(AUTH_FAILED_TEXT, ignoreCase = true) -> Reply.AuthFailed
+            !response.isSuccessful -> throw ProtocolException("HTTP ${response.code} for $label")
+            else -> Reply.Ok(parseEnvelope(body, label))
         }
     }
 
