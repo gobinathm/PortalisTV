@@ -27,6 +27,8 @@ internal data class StoredSettings(
     /** Row names in order; unknown names are dropped and missing rows added on reading. */
     val homeRowOrder: List<String> = emptyList(),
     val hiddenHomeRows: Set<String> = emptySet(),
+    /** Key code to action name; null until the user changes them, meaning the defaults. */
+    val keyBindings: Map<String, String>? = null,
 )
 
 internal fun StoredSettings.toAppSettings() = AppSettings(
@@ -48,6 +50,7 @@ internal fun StoredSettings.toAppSettings() = AppSettings(
         homeRowOrder.mapNotNull { name -> HomeRow.entries.firstOrNull { it.name == name } }
             .map { HomeRowSetting(it, visible = it.name !in hiddenHomeRows) },
     ),
+    keyBindings = keyBindings?.let(::readKeyBindings) ?: RemoteKeys.DEFAULT,
 )
 
 internal fun AppSettings.toStored() = StoredSettings(
@@ -65,7 +68,17 @@ internal fun AppSettings.toStored() = StoredSettings(
     accent = accent.name,
     homeRowOrder = homeRows.map { it.row.name },
     hiddenHomeRows = homeRows.filterNot { it.visible }.mapTo(HashSet()) { it.row.name },
+    keyBindings = keyBindings.takeIf { it != RemoteKeys.DEFAULT }
+        ?.map { (code, action) -> code.toString() to action.name }
+        ?.toMap(),
 )
+
+/** Drops entries with an unknown action or a button that can't be mapped. */
+private fun readKeyBindings(stored: Map<String, String>): Map<Int, PlayerAction> = stored.mapNotNull { (code, name) ->
+    val keyCode = code.toIntOrNull()?.takeIf(RemoteKeys::isMappable)
+    val action = PlayerAction.entries.firstOrNull { it.name == name }
+    if (keyCode != null && action != null) keyCode to action else null
+}.toMap()
 
 private inline fun <reified E : Enum<E>> enumOrDefault(name: String, default: E): E =
     enumValues<E>().firstOrNull { it.name == name } ?: default

@@ -9,6 +9,7 @@ import io.github.gobinathm.portalistv.core.data.FavoritesRepository
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
 import io.github.gobinathm.portalistv.core.data.WatchProgressRepository
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
+import io.github.gobinathm.portalistv.core.datastore.PlayerAction
 import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.ContentSource
@@ -59,6 +60,8 @@ data class PlayerUiState(
     val vod: VodTitle? = null,
     /** Where left/right presses are taking playback; it seeks there once they pause. */
     val scrubTargetMs: Long? = null,
+    /** Shown briefly after a remote button added (true) or removed (false) the channel as a favorite. */
+    val favoriteChanged: Boolean? = null,
 )
 
 data class VodTitle(val title: String, val subtitle: String?)
@@ -98,11 +101,18 @@ class PlayerViewModel @Inject constructor(
     private var numberJob: Job? = null
     private var progressJob: Job? = null
     private var scrubJob: Job? = null
+    private var noticeJob: Job? = null
+    private var previousChannel: LiveChannel? = null
+
+    /** What the remote's extra buttons do; read with the settings when the screen opens. */
+    var keyBindings: Map<Int, PlayerAction> = emptyMap()
+        private set
 
     init {
         viewModelScope.launch {
             val profile = repository.get(profileId) ?: return@launch
             val appSettings = settings.settings.first()
+            keyBindings = appSettings.keyBindings
             val external = profile.playback.engine == PlayerEngine.EXTERNAL
             if (!external) _player.value = playerFactory.create(appSettings.player)
             _state.update { it.copy(pictureInPicture = appSettings.pictureInPicture && !external) }
@@ -169,6 +179,25 @@ class PlayerViewModel @Inject constructor(
             delay(SCRUB_COMMIT_MS)
             player.seekTo(target)
             _state.update { it.copy(scrubTargetMs = null) }
+        }
+    }
+
+    /** Back to the channel watched before this one, as the "last channel" button does on a set-top box. */
+    fun lastChannel() {
+        previousChannel?.let(::tune)
+    }
+
+    /** Adds the channel playing to favorites, or removes it, and says which briefly. */
+    fun toggleFavorite() {
+        val channel = _state.value.channel ?: return
+        viewModelScope.launch {
+            val added = favorites.toggle(profileId, channel)
+            _state.update { it.copy(favoriteChanged = added) }
+            noticeJob?.cancel()
+            noticeJob = launch {
+                delay(NUMBER_ENTRY_MS)
+                _state.update { it.copy(favoriteChanged = null) }
+            }
         }
     }
 
@@ -255,6 +284,7 @@ class PlayerViewModel @Inject constructor(
 
     private fun tune(channel: LiveChannel) {
         val contentSource = source ?: return
+        _state.value.channel?.takeIf { it.id != channel.id }?.let { previousChannel = it }
         tuneJob?.cancel()
         _state.update {
             PlayerUiState(channel = channel, pictureInPicture = it.pictureInPicture, typedNumber = it.typedNumber)

@@ -38,6 +38,7 @@ class SettingsSerializerTest {
             startProfileUuid = "6f1c1f0e-0000-4000-8000-000000000001",
             theme = AppTheme.OLED_BLACK,
             accent = AccentColor.MINT,
+            keyBindings = mapOf(183 to PlayerAction.LAST_CHANNEL),
             homeRows = listOf(
                 HomeRowSetting(HomeRow.LIVE_TV),
                 HomeRowSetting(HomeRow.FAVORITES, visible = false),

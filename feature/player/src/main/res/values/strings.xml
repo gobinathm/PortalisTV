@@ -18,4 +18,6 @@
     <!-- %1$s is a start time, %2$s a programme title. -->
     <string name="player_next">Next %1$s  %2$s</string>
     <string name="player_number_not_found">No channel %1$d</string>
+    <string name="player_favorite_added">Added to favorites</string>
+    <string name="player_favorite_removed">Removed from favorites</string>
 </resources>

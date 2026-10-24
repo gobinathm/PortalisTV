@@ -62,6 +62,7 @@ private fun SettingsContent(
         appearanceRows(settings, viewModel, firstRow)
         homeRowRows(settings, viewModel)
         playbackRows(player, viewModel, onPick = { picker = it })
+        remoteKeyRows(settings.keyBindings, viewModel)
         backgroundRows(settings, viewModel)
         contentRows(settings, viewModel)
         // With one profile there is nothing to choose: it always opens.

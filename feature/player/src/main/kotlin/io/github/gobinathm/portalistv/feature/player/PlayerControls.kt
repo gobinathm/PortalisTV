@@ -50,7 +50,7 @@ private val ControlSize = 56.dp
 private val ControlIconSize = 28.dp
 
 /** Dark enough behind the controls that text burned into the video doesn't compete with them. */
-private val ScrimColors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f), Color.Black.copy(alpha = 0.95f))
+internal val ScrimColors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f), Color.Black.copy(alpha = 0.95f))
 
 /** The side panels the control bar opens. */
 internal enum class PlayerPanel { TRACKS, PICTURE }
@@ -180,45 +180,6 @@ private fun NowPlaying(ui: PlayerUiState) {
     }
 }
 
-/** The channel number being typed, or that the typed one doesn't exist. */
-@Composable
-internal fun NumberEntry(ui: PlayerUiState, modifier: Modifier = Modifier) {
-    val text = when {
-        ui.typedNumber.isNotEmpty() -> ui.typedNumber
-        ui.numberNotFound != null -> stringResource(R.string.player_number_not_found, ui.numberNotFound)
-        else -> return
-    }
-    Text(
-        text,
-        style = MaterialTheme.typography.displayMedium,
-        color = Color.White,
-        modifier = modifier
-            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(Spacing.s))
-            .padding(horizontal = Spacing.l, vertical = Spacing.s),
-    )
-}
-
-/** The seek bar while left/right choose a position: where playback is, and where it will go. */
-@Composable
-internal fun ScrubBar(targetMs: Long, playback: PlaybackState, modifier: Modifier = Modifier) {
-    val delta = targetMs - playback.positionMs
-    Column(
-        modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(ScrimColors))
-            .padding(horizontal = Spacing.screenHorizontal)
-            .padding(top = Spacing.xl * 2, bottom = Spacing.screenVertical),
-        verticalArrangement = Arrangement.spacedBy(Spacing.s),
-    ) {
-        Text(
-            formatTime(targetMs) + "   (" + (if (delta >= 0) "+" else "-") + formatTime(kotlin.math.abs(delta)) + ")",
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color.White,
-        )
-        Progress(playback.copy(positionMs = targetMs))
-    }
-}
-
 /** A round icon button; its name appears underneath while it has focus. */
 @Composable
 private fun ControlButton(
@@ -248,7 +209,7 @@ private fun ControlButton(
 }
 
 @Composable
-private fun Progress(playback: PlaybackState) {
+internal fun Progress(playback: PlaybackState) {
     val fraction = (playback.positionMs.toFloat() / playback.durationMs).coerceIn(0f, 1f)
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Box(

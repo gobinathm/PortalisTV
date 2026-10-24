@@ -15,4 +15,6 @@ data class AppSettings(
     val accent: AccentColor = AccentColor.AZURE,
     /** Home's rows in order; always lists every [HomeRow] once. */
     val homeRows: List<HomeRowSetting> = normalizedHomeRows(emptyList()),
+    /** Remote button (Android key code) to what it does during playback. */
+    val keyBindings: Map<Int, PlayerAction> = RemoteKeys.DEFAULT,
 )

@@ -1,19 +1,5 @@
 package io.github.gobinathm.portalistv.feature.player
 
-import android.view.KeyEvent
-import android.view.KeyEvent.KEYCODE_0
-import android.view.KeyEvent.KEYCODE_9
-import android.view.KeyEvent.KEYCODE_CHANNEL_DOWN
-import android.view.KeyEvent.KEYCODE_CHANNEL_UP
-import android.view.KeyEvent.KEYCODE_DPAD_CENTER
-import android.view.KeyEvent.KEYCODE_DPAD_DOWN
-import android.view.KeyEvent.KEYCODE_DPAD_LEFT
-import android.view.KeyEvent.KEYCODE_DPAD_RIGHT
-import android.view.KeyEvent.KEYCODE_DPAD_UP
-import android.view.KeyEvent.KEYCODE_ENTER
-import android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
-import android.view.KeyEvent.KEYCODE_NUMPAD_0
-import android.view.KeyEvent.KEYCODE_NUMPAD_9
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -88,6 +74,7 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
     // Bumped on every key press so the overlay's hide timer restarts.
     var interaction by remember { mutableIntStateOf(0) }
     val rootFocus = remember { FocusRequester() }
+    val screenActions = PlayerUi(showOverlay = { overlayVisible = true }, openPanel = { panel = it })
     PlaybackLifecycle(viewModel)
     BackHandler(enabled = overlayVisible) { overlayVisible = false }
     // Composed later, so it wins while a panel is open.
@@ -119,9 +106,7 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
             .onPreviewKeyEvent { event ->
                 interaction++
                 event.type == KeyEventType.KeyDown &&
-                    viewModel.handleKey(event.nativeKeyEvent, overlayVisible, playback, player) {
-                        overlayVisible = true
-                    }
+                    viewModel.handleKey(event.nativeKeyEvent, overlayVisible, playback, player, screenActions)
             }
             .focusRequester(rootFocus)
             .focusable(),
@@ -159,61 +144,7 @@ private fun BoxScope.StatusLayer(ui: PlayerUiState, playback: PlaybackState) {
     if (ui.scrubTargetMs == null) PlaybackStatus(ui, playback, Modifier.align(Alignment.Center))
     ui.scrubTargetMs?.let { ScrubBar(it, playback, Modifier.align(Alignment.BottomCenter)) }
     NumberEntry(ui, Modifier.align(Alignment.TopEnd).padding(Spacing.screenHorizontal))
-}
-
-/** The digit a number key stands for, from the remote's or a keyboard's number row or keypad. */
-private fun digitOf(code: Int): Int? = when (code) {
-    in KEYCODE_0..KEYCODE_9 -> code - KEYCODE_0
-    in KEYCODE_NUMPAD_0..KEYCODE_NUMPAD_9 -> code - KEYCODE_NUMPAD_0
-    else -> null
-}
-
-/**
- * Keys on the playback screen. Number keys always pick a channel; the rest act only while the
- * controls are hidden. Returns true when the key was used.
- */
-private fun PlayerViewModel.handleKey(
-    event: KeyEvent,
-    overlayVisible: Boolean,
-    playback: PlaybackState,
-    player: Player,
-    showOverlay: () -> Unit,
-): Boolean {
-    val digit = digitOf(event.keyCode)
-    val seek = event.keyCode == KEYCODE_DPAD_LEFT || event.keyCode == KEYCODE_DPAD_RIGHT
-    return when {
-        digit != null -> {
-            typeDigit(digit)
-            true
-        }
-        overlayVisible -> false
-        seek && playback.seekable -> {
-            scrub(forward = event.keyCode == KEYCODE_DPAD_RIGHT, repeatCount = event.repeatCount)
-            true
-        }
-        else -> handleControlKey(event.keyCode, playback, player, this, showOverlay)
-    }
-}
-
-/** Keys while the controls are hidden. Returns true when the key was used. */
-private fun handleControlKey(
-    code: Int,
-    playback: PlaybackState,
-    player: Player,
-    viewModel: PlayerViewModel,
-    showOverlay: () -> Unit,
-): Boolean {
-    when (code) {
-        KEYCODE_DPAD_UP, KEYCODE_CHANNEL_UP -> viewModel.zap(+1)
-        KEYCODE_DPAD_DOWN, KEYCODE_CHANNEL_DOWN -> viewModel.zap(-1)
-        KEYCODE_DPAD_CENTER, KEYCODE_ENTER -> showOverlay()
-        // Seekable streams scrub instead (see handleKey); live ones show the controls.
-        KEYCODE_DPAD_LEFT, KEYCODE_DPAD_RIGHT -> showOverlay()
-        KEYCODE_MEDIA_PLAY_PAUSE ->
-            if (playback.status == PlaybackState.Status.PAUSED) player.resume() else player.pause()
-        else -> return false
-    }
-    return true
+    FavoriteNotice(ui, Modifier.align(Alignment.TopEnd).padding(Spacing.screenHorizontal))
 }
 
 @Composable

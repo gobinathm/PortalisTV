@@ -57,5 +57,26 @@
     <string name="settings_row_up">Move up</string>
     <string name="settings_row_down">Move down</string>
 
+    <string name="settings_section_keys">Remote buttons</string>
+    <string name="settings_keys_add">Add a button</string>
+    <string name="settings_keys_add_hint">For remotes with extra buttons, such as channel up/down or colored buttons.</string>
+    <string name="settings_keys_press">Press a button on your remote</string>
+    <string name="settings_keys_press_hint">Press Back to cancel.</string>
+    <string name="settings_keys_reserved">That button is used for moving around the app. Try another one, or press Back.</string>
+    <string name="settings_keys_remove">Remove</string>
+    <string name="settings_keys_reset">Reset remote buttons</string>
+    <string name="settings_key_red">Red</string>
+    <string name="settings_key_green">Green</string>
+    <string name="settings_key_yellow">Yellow</string>
+    <string name="settings_key_blue">Blue</string>
+    <string name="settings_action_next">Next channel</string>
+    <string name="settings_action_previous">Previous channel</string>
+    <string name="settings_action_last">Last channel watched</string>
+    <string name="settings_action_controls">Show controls</string>
+    <string name="settings_action_play_pause">Play / pause</string>
+    <string name="settings_action_tracks">Audio &amp; subtitles</string>
+    <string name="settings_action_picture">Change picture size</string>
+    <string name="settings_action_favorite">Add or remove favorite</string>
+
     <string name="settings_applies_next">Changes apply from the next channel you play.</string>
 </resources>
