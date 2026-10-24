@@ -7,9 +7,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import io.github.gobinathm.portalistv.core.catalog.DeviceCatalog
 import io.github.gobinathm.portalistv.core.data.ProfileError
+import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
 import io.github.gobinathm.portalistv.core.model.Profile
 import io.github.gobinathm.portalistv.feature.profiles.R
-import io.github.gobinathm.portalistv.feature.profiles.component.ChoiceOption
 import io.github.gobinathm.portalistv.feature.profiles.component.ValueRow
 
 internal const val CUSTOM_KEY = "custom"

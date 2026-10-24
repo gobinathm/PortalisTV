@@ -6,6 +6,9 @@ package io.github.gobinathm.portalistv.core.model
  * `java.io.IOException` for network and portal errors.
  */
 interface ContentSource {
+    /** User agent the player should send with stream requests; some providers check it. */
+    val playbackUserAgent: String?
+
     /** Opens or renews the session. */
     suspend fun connect(): SourceAccount
 

@@ -31,13 +31,22 @@ import io.github.gobinathm.portalistv.core.model.LiveChannel
 
 /** The selected profile's home: connection status and a first look at its live TV. */
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(
+    onPlayChannel: (LiveChannel) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    HomeContent(state, onRetry = viewModel::retry, modifier = modifier)
+    HomeContent(state, onRetry = viewModel::retry, onPlayChannel = onPlayChannel, modifier = modifier)
 }
 
 @Composable
-private fun HomeContent(state: HomeUiState, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+private fun HomeContent(
+    state: HomeUiState,
+    onRetry: () -> Unit,
+    onPlayChannel: (LiveChannel) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val firstFocus = remember { FocusRequester() }
     LazyColumn(
         modifier = modifier
@@ -55,6 +64,7 @@ private fun HomeContent(state: HomeUiState, onRetry: () -> Unit, modifier: Modif
                     key = { it.id },
                     label = LiveCategory::title,
                     focus = firstFocus.takeIf { state.error == null },
+                    onClick = {},
                 )
             }
         }
@@ -66,6 +76,7 @@ private fun HomeContent(state: HomeUiState, onRetry: () -> Unit, modifier: Modif
                     key = { it.id },
                     label = { channel -> channel.number?.let { "$it  ${channel.name}" } ?: channel.name },
                     focus = null,
+                    onClick = onPlayChannel,
                 )
             }
         }
@@ -109,6 +120,7 @@ private fun <T> ContentRow(
     key: (T) -> Any,
     label: (T) -> String,
     focus: FocusRequester?,
+    onClick: (T) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
         Text(
@@ -123,7 +135,7 @@ private fun <T> ContentRow(
             items(items, key = key) { item ->
                 PosterCard(
                     title = label(item),
-                    onClick = {},
+                    onClick = { onClick(item) },
                     modifier = if (item == items.first() && focus != null) Modifier.focusRequester(focus) else Modifier,
                 )
             }
@@ -164,6 +176,7 @@ private fun HomePreview() {
                 totalChannels = 1,
             ),
             onRetry = {},
+            onPlayChannel = {},
         )
     }
 }

@@ -26,10 +26,10 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
+import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceDialog
+import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.feature.profiles.R
-import io.github.gobinathm.portalistv.feature.profiles.component.ChoiceDialog
-import io.github.gobinathm.portalistv.feature.profiles.component.ChoiceOption
 import io.github.gobinathm.portalistv.feature.profiles.component.ConfirmDialog
 import io.github.gobinathm.portalistv.feature.profiles.component.TextInputDialog
 

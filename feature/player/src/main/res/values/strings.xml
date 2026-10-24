@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_play">Play</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_audio">Audio</string>
+    <string name="player_subtitles">Subtitles</string>
+    <string name="player_subtitles_off">Off</string>
+    <string name="player_aspect">Picture: %1$s</string>
+    <string name="player_aspect_title">Picture size</string>
+    <string name="player_loading">Loading…</string>
+    <string name="player_buffering">Buffering %1$d%%</string>
+    <string name="player_error_stream">This channel can\'t be played right now.</string>
+    <string name="player_error_link">The portal didn\'t provide a stream for this channel.</string>
+
+    <string name="aspect_best_fit">Fit</string>
+    <string name="aspect_fill">Fill</string>
+    <string name="aspect_16_9">16:9</string>
+    <string name="aspect_4_3">4:3</string>
+    <string name="aspect_original">Original</string>
+</resources>

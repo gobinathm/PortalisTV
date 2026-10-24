@@ -16,7 +16,10 @@ import io.github.gobinathm.portalistv.core.stalker.StalkerClient
 import io.github.gobinathm.portalistv.core.stalker.StalkerException
 
 /** [ContentSource] for Stalker/Ministra portals. */
-internal class StalkerContentSource(private val client: StalkerClient) : ContentSource {
+internal class StalkerContentSource(
+    private val client: StalkerClient,
+    override val playbackUserAgent: String?,
+) : ContentSource {
     override suspend fun connect(): SourceAccount = mapErrors {
         client.connect().let { SourceAccount(displayName = it.name, message = it.message) }
     }

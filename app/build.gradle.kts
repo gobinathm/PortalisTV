@@ -77,6 +77,7 @@ dependencies {
     implementation(projects.core.data)
     implementation(projects.feature.home)
     implementation(projects.feature.profiles)
+    implementation(projects.feature.player)
     implementation(projects.player.vlc)
 
     implementation(libs.androidx.core.ktx)

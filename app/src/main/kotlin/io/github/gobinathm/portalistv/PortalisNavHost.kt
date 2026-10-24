@@ -4,8 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.feature.home.HomeScreen
 import io.github.gobinathm.portalistv.feature.home.HomeViewModel
+import io.github.gobinathm.portalistv.feature.player.PlayerScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorViewModel
 import io.github.gobinathm.portalistv.feature.profiles.list.ProfilesScreen
@@ -25,6 +28,10 @@ private data class ProfileEditorRoute(val profileId: Long = 0)
 @Serializable
 private data class HomeRoute(val profileId: Long)
 
+/** Plays [channelId], zapping within [categoryId] starting from its [page]. Names match PlayerViewModel's args. */
+@Serializable
+private data class PlayerRoute(val profileId: Long, val categoryId: String, val page: Int, val channelId: String)
+
 /** The app's screens. Feature modules never navigate themselves; they report intents here. */
 @Composable
 fun PortalisNavHost() {
@@ -40,8 +47,16 @@ fun PortalisNavHost() {
         composable<ProfileEditorRoute> {
             ProfileEditorScreen(onDone = { navController.popBackStack() })
         }
-        composable<HomeRoute> {
-            HomeScreen()
+        composable<HomeRoute> { entry ->
+            val profileId = entry.toRoute<HomeRoute>().profileId
+            HomeScreen(
+                onPlayChannel = { channel ->
+                    navController.navigate(PlayerRoute(profileId, ALL_CATEGORIES, page = 1, channelId = channel.id))
+                },
+            )
+        }
+        composable<PlayerRoute> {
+            PlayerScreen()
         }
     }
 }

@@ -24,7 +24,8 @@ class ContentSources @Inject constructor(
         // An edited profile gets a fresh session with its new settings.
         sources[profile.id]?.let { (cached, source) -> if (cached == profile) return source }
         val http = httpClients.forProfile(portalConfig.proxy(profile))
-        val client = mapErrors { StalkerClient(http, portalConfig.stalkerConfig(profile), recorder = recorder) }
-        return StalkerContentSource(client).also { sources[profile.id] = profile to it }
+        val config = portalConfig.stalkerConfig(profile)
+        val client = mapErrors { StalkerClient(http, config, recorder = recorder) }
+        return StalkerContentSource(client, config.identity.userAgent).also { sources[profile.id] = profile to it }
     }
 }
