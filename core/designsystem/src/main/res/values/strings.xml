@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pin_enter">Enter your PIN</string>
+    <string name="pin_wrong">That\'s not the PIN.</string>
+    <plurals name="pin_paused">
+        <item quantity="one">Too many tries. Try again in %1$d second.</item>
+        <item quantity="other">Too many tries. Try again in %1$d seconds.</item>
+    </plurals>
+</resources>

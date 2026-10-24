@@ -10,6 +10,7 @@ import io.github.gobinathm.portalistv.core.player.AspectMode
 import io.github.gobinathm.portalistv.core.player.Deinterlace
 import io.github.gobinathm.portalistv.core.player.HardwareDecoding
 import io.github.gobinathm.portalistv.core.player.PlayerSettings
+import io.github.gobinathm.portalistv.core.security.PinHash
 import io.github.gobinathm.portalistv.core.security.SecretCipher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -39,6 +40,7 @@ class SettingsSerializerTest {
             theme = AppTheme.OLED_BLACK,
             accent = AccentColor.MINT,
             keyBindings = mapOf(183 to PlayerAction.LAST_CHANNEL),
+            parental = ParentalSettings(PinHash("c2FsdA==", "aGFzaA==", 1_000), lockSettings = true),
             homeRows = listOf(
                 HomeRowSetting(HomeRow.LIVE_TV),
                 HomeRowSetting(HomeRow.FAVORITES, visible = false),

@@ -38,7 +38,7 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [ ] Guide-style Live TV: browse a category as a TV guide, with each channel's programmes along a timeline
 
 ## M7 — Customization
-- [ ] Themes and accent, home-row editor, key mapping, parental lock
+- [x] Themes and accent, home-row editor, key mapping, parental lock
 
 ## M8 — Hardening & v1.0
 - [ ] Security self-audit (OWASP MASVS L1), license audit, `THIRD_PARTY_NOTICES.md`

@@ -25,9 +25,8 @@
     <string name="settings_pip">Keep playing in a small window</string>
     <string name="settings_pip_hint">Picture-in-picture, where the TV supports it. Otherwise playback stops.</string>
 
-    <string name="settings_section_content">Content</string>
     <string name="settings_show_adult">Show adult categories</string>
-    <string name="settings_show_adult_hint">Categories and channels your portal marks as adult. A PIN lock for them is coming later.</string>
+    <string name="settings_show_adult_hint">Categories and channels your portal marks as adult. With a parental PIN, they open only after it\'s entered.</string>
 
     <string name="settings_section_start">Start-up</string>
     <string name="settings_start_profile">Open at start</string>
@@ -77,6 +76,20 @@
     <string name="settings_action_tracks">Audio &amp; subtitles</string>
     <string name="settings_action_picture">Change picture size</string>
     <string name="settings_action_favorite">Add or remove favorite</string>
+
+    <string name="settings_section_parental">Parental controls</string>
+    <string name="settings_pin">Parental PIN</string>
+    <string name="settings_pin_on">On</string>
+    <string name="settings_pin_off">Off</string>
+    <string name="settings_pin_change">Change PIN</string>
+    <string name="settings_pin_remove">Turn off PIN</string>
+    <string name="settings_pin_new">Choose a 4-digit PIN</string>
+    <string name="settings_pin_new_hint">It\'s asked for before adult categories open, and before the settings that control them.</string>
+    <string name="settings_pin_confirm">Enter the PIN again</string>
+    <string name="settings_pin_mismatch">The PINs didn\'t match. Choose one again.</string>
+    <string name="settings_lock_settings">Lock Settings and profiles</string>
+    <string name="settings_lock_settings_hint">Ask for the PIN before opening Settings or editing a profile.</string>
+    <string name="settings_lock_needs_pin">Set a parental PIN first.</string>
 
     <string name="settings_applies_next">Changes apply from the next channel you play.</string>
 </resources>

@@ -35,10 +35,13 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil3.ImageLoader
+import io.github.gobinathm.portalistv.core.data.PinResult
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryRail
+import io.github.gobinathm.portalistv.core.designsystem.component.PinDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.component.groupOf
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
+import io.github.gobinathm.portalistv.core.designsystem.component.pausedMessage
 import io.github.gobinathm.portalistv.core.designsystem.component.railEntries
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
@@ -52,6 +55,7 @@ import io.github.gobinathm.portalistv.core.model.Programme
 import io.github.gobinathm.portalistv.core.model.groupCategories
 import io.github.gobinathm.portalistv.core.model.nowNext
 import android.text.format.DateFormat as AndroidDateFormat
+import io.github.gobinathm.portalistv.core.designsystem.R as DesignR
 
 /**
  * Live TV: a category rail on the left and the selected category's channels on the right.
@@ -70,7 +74,8 @@ fun LiveScreen(
         state = state,
         imageLoader = imageLoader,
         actions = LiveActions(
-            onSelectCategory = viewModel::selectCategory,
+            onSelectCategory = { viewModel.selectCategory(it) },
+            onFocusCategory = { viewModel.selectCategory(it, ask = false) },
             onVisible = viewModel::onVisible,
             onRetry = viewModel::retry,
             onPlay = { channel -> onPlay(channel, state.selectedCategoryId, viewModel.pageOf(channel)) },
@@ -79,10 +84,25 @@ fun LiveScreen(
         ),
         modifier = modifier,
     )
+    if (state.pinFor != null) {
+        val paused = pausedMessage()
+        PinDialog(
+            title = stringResource(DesignR.string.pin_enter),
+            error = when (val result = state.pinResult) {
+                PinResult.Wrong -> stringResource(DesignR.string.pin_wrong)
+                is PinResult.Paused -> paused(result.seconds)
+                else -> null
+            },
+            onSubmit = viewModel::submitPin,
+            onDismiss = viewModel::cancelPin,
+        )
+    }
 }
 
+@Suppress("LongParameterList") // One callback per thing the screen can ask for.
 private class LiveActions(
     val onSelectCategory: (String) -> Unit,
+    val onFocusCategory: (String) -> Unit,
     val onVisible: (first: Int, last: Int) -> Unit,
     val onRetry: () -> Unit,
     val onPlay: (LiveChannel) -> Unit,
@@ -116,6 +136,7 @@ private fun LiveContent(
             onSelect = actions.onSelectCategory,
             modifier = Modifier.width(320.dp).fillMaxHeight(),
             onToggleGroup = { key -> expanded = if (expanded == key) null else key },
+            onFocusSelect = actions.onFocusCategory,
         )
         ChannelPane(state, imageLoader, actions, Modifier.weight(1f).fillMaxHeight())
     }
@@ -267,7 +288,7 @@ private fun LivePreview() {
                 nowMillis = now,
             ),
             imageLoader = null,
-            actions = LiveActions({}, { _, _ -> }, {}, {}, {}, {}),
+            actions = LiveActions({}, {}, { _, _ -> }, {}, {}, {}, {}),
         )
     }
 }

@@ -34,11 +34,14 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.ImageLoader
+import io.github.gobinathm.portalistv.core.data.PinResult
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryRail
+import io.github.gobinathm.portalistv.core.designsystem.component.PinDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.PosterImageCard
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.component.groupOf
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
+import io.github.gobinathm.portalistv.core.designsystem.component.pausedMessage
 import io.github.gobinathm.portalistv.core.designsystem.component.railEntries
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
@@ -47,6 +50,7 @@ import io.github.gobinathm.portalistv.core.model.CategoryNode
 import io.github.gobinathm.portalistv.core.model.VodCategory
 import io.github.gobinathm.portalistv.core.model.VodItem
 import io.github.gobinathm.portalistv.core.model.groupCategories
+import io.github.gobinathm.portalistv.core.designsystem.R as DesignR
 
 private val RailWidth = 260.dp
 private val GridPoster = DpSize(132.dp, 198.dp)
@@ -63,12 +67,26 @@ fun VodBrowseScreen(
     VodBrowseContent(
         state = state,
         imageLoader = imageLoader,
-        onSelectCategory = viewModel::selectCategory,
+        onSelectCategory = { viewModel.selectCategory(it) },
+        onFocusCategory = { viewModel.selectCategory(it, ask = false) },
         onScrolledTo = viewModel::onScrolledTo,
         onRetry = viewModel::retry,
         onOpen = onOpen,
         modifier = modifier,
     )
+    if (state.pinFor != null) {
+        val paused = pausedMessage()
+        PinDialog(
+            title = stringResource(DesignR.string.pin_enter),
+            error = when (val result = state.pinResult) {
+                PinResult.Wrong -> stringResource(DesignR.string.pin_wrong)
+                is PinResult.Paused -> paused(result.seconds)
+                else -> null
+            },
+            onSubmit = viewModel::submitPin,
+            onDismiss = viewModel::cancelPin,
+        )
+    }
 }
 
 @Composable
@@ -76,6 +94,7 @@ private fun VodBrowseContent(
     state: VodBrowseUiState,
     imageLoader: ImageLoader?,
     onSelectCategory: (String) -> Unit,
+    onFocusCategory: (String) -> Unit,
     onScrolledTo: (Int) -> Unit,
     onRetry: () -> Unit,
     onOpen: (VodItem) -> Unit,
@@ -101,6 +120,7 @@ private fun VodBrowseContent(
             onSelect = onSelectCategory,
             modifier = Modifier.width(RailWidth).fillMaxHeight(),
             onToggleGroup = { key -> expanded = if (expanded == key) null else key },
+            onFocusSelect = onFocusCategory,
         )
         Column(
             Modifier.weight(1f).fillMaxHeight().padding(end = Spacing.screenHorizontal),
@@ -196,6 +216,7 @@ private fun VodBrowsePreview() {
             ),
             imageLoader = null,
             onSelectCategory = {},
+            onFocusCategory = {},
             onScrolledTo = {},
             onRetry = {},
             onOpen = {},

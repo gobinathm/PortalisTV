@@ -4,6 +4,7 @@ import io.github.gobinathm.portalistv.core.player.AspectMode
 import io.github.gobinathm.portalistv.core.player.Deinterlace
 import io.github.gobinathm.portalistv.core.player.HardwareDecoding
 import io.github.gobinathm.portalistv.core.player.PlayerSettings
+import io.github.gobinathm.portalistv.core.security.PinHash
 import kotlinx.serialization.Serializable
 
 /**
@@ -29,6 +30,10 @@ internal data class StoredSettings(
     val hiddenHomeRows: Set<String> = emptySet(),
     /** Key code to action name; null until the user changes them, meaning the defaults. */
     val keyBindings: Map<String, String>? = null,
+    val pinSalt: String? = null,
+    val pinHash: String? = null,
+    val pinIterations: Int = 0,
+    val lockSettings: Boolean = false,
 )
 
 internal fun StoredSettings.toAppSettings() = AppSettings(
@@ -51,6 +56,10 @@ internal fun StoredSettings.toAppSettings() = AppSettings(
             .map { HomeRowSetting(it, visible = it.name !in hiddenHomeRows) },
     ),
     keyBindings = keyBindings?.let(::readKeyBindings) ?: RemoteKeys.DEFAULT,
+    parental = ParentalSettings(
+        pin = storedPin(),
+        lockSettings = lockSettings,
+    ),
 )
 
 internal fun AppSettings.toStored() = StoredSettings(
@@ -71,7 +80,14 @@ internal fun AppSettings.toStored() = StoredSettings(
     keyBindings = keyBindings.takeIf { it != RemoteKeys.DEFAULT }
         ?.map { (code, action) -> code.toString() to action.name }
         ?.toMap(),
+    pinSalt = parental.pin?.salt,
+    pinHash = parental.pin?.hash,
+    pinIterations = parental.pin?.iterations ?: 0,
+    lockSettings = parental.lockSettings,
 )
+
+private fun StoredSettings.storedPin(): PinHash? =
+    if (pinSalt != null && pinHash != null && pinIterations > 0) PinHash(pinSalt, pinHash, pinIterations) else null
 
 /** Drops entries with an unknown action or a button that can't be mapped. */
 private fun readKeyBindings(stored: Map<String, String>): Map<Int, PlayerAction> = stored.mapNotNull { (code, name) ->

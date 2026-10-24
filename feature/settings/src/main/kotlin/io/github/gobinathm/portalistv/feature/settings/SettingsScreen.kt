@@ -64,7 +64,7 @@ private fun SettingsContent(
         playbackRows(player, viewModel, onPick = { picker = it })
         remoteKeyRows(settings.keyBindings, viewModel)
         backgroundRows(settings, viewModel)
-        contentRows(settings, viewModel)
+        item(key = "parental") { ParentalSection(settings, viewModel) }
         // With one profile there is nothing to choose: it always opens.
         if (profiles.size > 1) startRows(settings, profiles, onPick = { pickingStartProfile = true })
     }
@@ -162,18 +162,6 @@ private fun LazyListScope.backgroundRows(settings: AppSettings, viewModel: Setti
             checked = settings.pictureInPicture,
             onCheckedChange = viewModel::setPictureInPicture,
             hint = stringResource(R.string.settings_pip_hint),
-        )
-    }
-}
-
-private fun LazyListScope.contentRows(settings: AppSettings, viewModel: SettingsViewModel) {
-    item { SectionHeader(stringResource(R.string.settings_section_content)) }
-    item {
-        SwitchRow(
-            label = stringResource(R.string.settings_show_adult),
-            checked = settings.showAdultContent,
-            onCheckedChange = viewModel::setShowAdultContent,
-            hint = stringResource(R.string.settings_show_adult_hint),
         )
     }
 }

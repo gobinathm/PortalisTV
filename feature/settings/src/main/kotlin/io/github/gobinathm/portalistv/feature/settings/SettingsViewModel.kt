@@ -3,6 +3,8 @@ package io.github.gobinathm.portalistv.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.gobinathm.portalistv.core.data.ParentalLock
+import io.github.gobinathm.portalistv.core.data.PinResult
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
 import io.github.gobinathm.portalistv.core.datastore.AppSettings
 import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
@@ -22,7 +24,21 @@ data class StartProfile(val uuid: String, val name: String)
 class SettingsViewModel @Inject constructor(
     private val repository: SettingsRepository,
     profileRepository: ProfileRepository,
+    private val parentalLock: ParentalLock,
 ) : ViewModel() {
+    /** Whether the PIN was entered since the app started, so it needn't be asked again. */
+    val unlocked: StateFlow<Boolean> = parentalLock.unlocked
+
+    suspend fun checkPin(pin: String): PinResult = parentalLock.check(pin)
+
+    fun setPin(pin: String) {
+        viewModelScope.launch { parentalLock.setPin(pin) }
+    }
+
+    fun removePin() {
+        viewModelScope.launch { parentalLock.removePin() }
+    }
+
     /** Null until the stored settings are read, so the screen never shows defaults that aren't saved. */
     val settings: StateFlow<AppSettings?> =
         repository.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)

@@ -7,6 +7,8 @@ import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gobinathm.portalistv.core.common.log.Log
 import io.github.gobinathm.portalistv.core.data.FavoritesRepository
+import io.github.gobinathm.portalistv.core.data.ParentalLock
+import io.github.gobinathm.portalistv.core.data.PinResult
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
 import io.github.gobinathm.portalistv.core.data.image.PortalImages
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
@@ -47,6 +49,9 @@ data class LiveUiState(
     val guide: Map<String, List<Programme>> = emptyMap(),
     /** The clock the guide is shown against; ticks while the screen is open. */
     val nowMillis: Long = 0,
+    /** An adult category waiting for the parental PIN, with the last PIN's outcome. */
+    val pinFor: String? = null,
+    val pinResult: PinResult? = null,
 ) {
     val channels: List<LiveChannel> get() = pages.channels
     val totalChannels: Int get() = pages.totalItems
@@ -58,6 +63,7 @@ data class LiveUiState(
  * own, kept on the device. Adult categories and channels are left out unless the settings allow them.
  */
 @HiltViewModel
+@Suppress("LongParameterList", "TooManyFunctions") // Collaborators and screen actions, each separate.
 class LiveViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: ProfileRepository,
@@ -65,6 +71,7 @@ class LiveViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val favorites: FavoritesRepository,
     private val images: PortalImages,
+    private val parentalLock: ParentalLock,
 ) : ViewModel() {
     private val profileId: Long = savedStateHandle[ARG_PROFILE_ID] ?: 0L
     private val initialCategoryId: String = savedStateHandle[ARG_CATEGORY_ID] ?: ALL_CATEGORIES
@@ -109,7 +116,41 @@ class LiveViewModel @Inject constructor(
         if (_state.value.categories.isEmpty()) loadCategories() else loadMore()
     }
 
-    fun selectCategory(categoryId: String) {
+    /**
+     * Opens a category. An adult one needs the parental PIN first, if one is set: [ask] shows the
+     * PIN dialog; otherwise (the rail selecting by focus) the category is skipped.
+     */
+    fun selectCategory(categoryId: String, ask: Boolean = true) {
+        val adult = _state.value.categories.firstOrNull { it.id == categoryId }?.adult == true
+        if (!adult) return open(categoryId)
+        viewModelScope.launch {
+            when {
+                parentalLock.isOpen() -> open(categoryId)
+                ask -> _state.update { it.copy(pinFor = categoryId, pinResult = null) }
+            }
+        }
+    }
+
+    fun submitPin(pin: String) {
+        val categoryId = _state.value.pinFor ?: return
+        viewModelScope.launch {
+            val result = parentalLock.check(pin)
+            _state.update { it.copy(pinResult = result) }
+            if (result == PinResult.Correct) {
+                _state.update { it.copy(pinFor = null, pinResult = null) }
+                open(categoryId)
+            }
+        }
+    }
+
+    /** Leaves the category locked; one opened straight from Home gives way to everything. */
+    fun cancelPin() {
+        val wasOpening = _state.value.pinFor == _state.value.selectedCategoryId
+        _state.update { it.copy(pinFor = null, pinResult = null) }
+        if (wasOpening) open(ALL_CATEGORIES)
+    }
+
+    private fun open(categoryId: String) {
         if (categoryId == _state.value.selectedCategoryId && channelsJob != null) return
         channelsJob?.cancel()
         channelsJob = null

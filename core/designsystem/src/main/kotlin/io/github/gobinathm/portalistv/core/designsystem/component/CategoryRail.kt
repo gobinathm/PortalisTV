@@ -91,6 +91,8 @@ fun CategoryRail(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
     onToggleGroup: (groupKey: String) -> Unit = {},
+    /** Selecting by resting on an entry; may decline, e.g. for a locked category. */
+    onFocusSelect: (String) -> Unit = onSelect,
 ) {
     val selectedFocus = remember { FocusRequester() }
     var focused by remember { mutableStateOf<String?>(null) }
@@ -121,7 +123,7 @@ fun CategoryRail(
         // Group headers only open and close; resting on one selects nothing.
         val id = focused?.takeIf { groupKeyOfEntry(it) == null } ?: return@LaunchedEffect
         delay(SELECT_ON_FOCUS_DELAY_MS)
-        if (id != currentSelection) onSelect(id)
+        if (id != currentSelection) onFocusSelect(id)
     }
     LaunchedEffect(entries.isNotEmpty()) {
         val index = entries.indexOfFirst { it.id == currentSelection }

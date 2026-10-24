@@ -12,7 +12,7 @@ dependencies {
     api(projects.core.player)
     api(libs.kotlinx.coroutines.core)
     implementation(projects.core.common)
-    implementation(projects.core.security)
+    api(projects.core.security)
     implementation(libs.androidx.datastore)
     implementation(libs.kotlinx.serialization.json)
 

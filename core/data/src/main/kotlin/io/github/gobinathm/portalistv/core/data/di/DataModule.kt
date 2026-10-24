@@ -16,6 +16,7 @@ import io.github.gobinathm.portalistv.core.data.ProfileRepository
 import io.github.gobinathm.portalistv.core.data.WatchProgressRepository
 import io.github.gobinathm.portalistv.core.data.source.PortalConfig
 import io.github.gobinathm.portalistv.core.network.HttpClients
+import io.github.gobinathm.portalistv.core.security.PinHasher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import javax.inject.Qualifier
@@ -44,6 +45,9 @@ abstract class DataModule {
 
         @Provides
         fun provideClock(): Clock = Clock(System::currentTimeMillis)
+
+        @Provides
+        fun providePinHasher(): PinHasher = PinHasher()
 
         @Provides
         @Singleton

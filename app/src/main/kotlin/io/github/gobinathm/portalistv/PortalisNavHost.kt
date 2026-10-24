@@ -19,6 +19,7 @@ import io.github.gobinathm.portalistv.feature.player.PlayerScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorViewModel
 import io.github.gobinathm.portalistv.feature.profiles.list.ProfilesScreen
+import io.github.gobinathm.portalistv.feature.settings.ParentalGate
 import io.github.gobinathm.portalistv.feature.settings.SettingsScreen
 import io.github.gobinathm.portalistv.feature.vod.VodBrowseScreen
 import io.github.gobinathm.portalistv.feature.vod.VodDetailScreen
@@ -116,10 +117,12 @@ fun PortalisNavHost() {
             )
         }
         composable<SettingsRoute> {
-            SettingsScreen()
+            ParentalGate(onLeave = { navController.popBackStack() }) { SettingsScreen() }
         }
         composable<ProfileEditorRoute> {
-            ProfileEditorScreen(onDone = { navController.popBackStack() })
+            ParentalGate(onLeave = { navController.popBackStack() }) {
+                ProfileEditorScreen(onDone = { navController.popBackStack() })
+            }
         }
         composable<HomeRoute> { entry ->
             val profileId = entry.toRoute<HomeRoute>().profileId
