@@ -12,6 +12,7 @@ import io.github.gobinathm.portalistv.core.data.WatchProgressRepository
 import io.github.gobinathm.portalistv.core.data.image.PortalImages
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
 import io.github.gobinathm.portalistv.core.data.usesPlainHttp
+import io.github.gobinathm.portalistv.core.datastore.HomeRow
 import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.ContentSource
@@ -54,6 +55,8 @@ data class HomeUiState(
     val continueWatching: List<WatchProgress> = emptyList(),
     /** On-demand categories, starting with everything (id [ALL_CATEGORIES]); empty without on-demand. */
     val vodCategories: List<VodCategory> = emptyList(),
+    /** The rows to show, in order, as chosen in Settings. */
+    val rows: List<HomeRow> = HomeRow.entries,
     val error: ConnectionError? = null,
     val portalMessage: String? = null,
 )
@@ -92,6 +95,11 @@ class HomeViewModel @Inject constructor(
             val showAdult = settings.settings.first().showAdultContent
             favorites.channels(profileId).collect { list ->
                 _state.update { it.copy(favorites = list.filter { channel -> showAdult || !channel.adult }) }
+            }
+        }
+        viewModelScope.launch {
+            settings.settings.collect { app ->
+                _state.update { it.copy(rows = app.homeRows.filter { row -> row.visible }.map { row -> row.row }) }
             }
         }
         viewModelScope.launch {

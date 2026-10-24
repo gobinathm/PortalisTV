@@ -11,4 +11,8 @@ data class AppSettings(
     val showAdultContent: Boolean = false,
     /** The profile opened at start when there are several; a single profile always opens. Null shows the list. */
     val startProfileUuid: String? = null,
+    val theme: AppTheme = AppTheme.DARK,
+    val accent: AccentColor = AccentColor.AZURE,
+    /** Home's rows in order; always lists every [HomeRow] once. */
+    val homeRows: List<HomeRowSetting> = normalizedHomeRows(emptyList()),
 )

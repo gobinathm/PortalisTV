@@ -88,6 +88,7 @@ dependencies {
     implementation(projects.core.designsystem)
     implementation(projects.core.security)
     implementation(projects.core.data)
+    implementation(projects.core.datastore)
     implementation(projects.feature.home)
     implementation(projects.feature.live)
     implementation(projects.feature.vod)
@@ -98,6 +99,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     // Lets the benchmarks (and later, Baseline Profiles) compile the app ahead of time.

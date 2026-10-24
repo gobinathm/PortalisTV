@@ -1,5 +1,6 @@
 package io.github.gobinathm.portalistv.feature.player
 
+import android.view.KeyEvent
 import android.view.KeyEvent.KEYCODE_0
 import android.view.KeyEvent.KEYCODE_9
 import android.view.KeyEvent.KEYCODE_CHANNEL_DOWN
@@ -34,8 +35,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
@@ -51,10 +50,9 @@ import io.github.gobinathm.portalistv.core.player.Player
 import kotlinx.coroutines.delay
 
 private const val OVERLAY_TIMEOUT_MS = 5_000L
-private const val SEEK_STEP_MS = 10_000L
 
 /**
- * Full-screen live playback. Up/Down zap, OK shows the controls, Left/Right seek when possible.
+ * Full-screen playback. Up/Down zap, OK shows the controls, Left/Right choose where to seek when possible.
  * Profiles set to an external player hand the stream to that app and leave through [onExit].
  */
 @Composable
@@ -121,7 +119,7 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
             .onPreviewKeyEvent { event ->
                 interaction++
                 event.type == KeyEventType.KeyDown &&
-                    viewModel.handleKey(event.key.nativeKeyCode, overlayVisible, playback, player) {
+                    viewModel.handleKey(event.nativeKeyEvent, overlayVisible, playback, player) {
                         overlayVisible = true
                     }
             }
@@ -157,7 +155,9 @@ private fun PlaybackLifecycle(viewModel: PlayerViewModel) {
 /** Messages over the picture: loading and errors in the middle, a typed channel number at the top. */
 @Composable
 private fun BoxScope.StatusLayer(ui: PlayerUiState, playback: PlaybackState) {
-    PlaybackStatus(ui, playback, Modifier.align(Alignment.Center))
+    // While choosing where to seek, the bar says it all; a "buffering" note would only distract.
+    if (ui.scrubTargetMs == null) PlaybackStatus(ui, playback, Modifier.align(Alignment.Center))
+    ui.scrubTargetMs?.let { ScrubBar(it, playback, Modifier.align(Alignment.BottomCenter)) }
     NumberEntry(ui, Modifier.align(Alignment.TopEnd).padding(Spacing.screenHorizontal))
 }
 
@@ -173,20 +173,25 @@ private fun digitOf(code: Int): Int? = when (code) {
  * controls are hidden. Returns true when the key was used.
  */
 private fun PlayerViewModel.handleKey(
-    code: Int,
+    event: KeyEvent,
     overlayVisible: Boolean,
     playback: PlaybackState,
     player: Player,
     showOverlay: () -> Unit,
 ): Boolean {
-    val digit = digitOf(code)
+    val digit = digitOf(event.keyCode)
+    val seek = event.keyCode == KEYCODE_DPAD_LEFT || event.keyCode == KEYCODE_DPAD_RIGHT
     return when {
         digit != null -> {
             typeDigit(digit)
             true
         }
         overlayVisible -> false
-        else -> handleControlKey(code, playback, player, this, showOverlay)
+        seek && playback.seekable -> {
+            scrub(forward = event.keyCode == KEYCODE_DPAD_RIGHT, repeatCount = event.repeatCount)
+            true
+        }
+        else -> handleControlKey(event.keyCode, playback, player, this, showOverlay)
     }
 }
 
@@ -202,12 +207,8 @@ private fun handleControlKey(
         KEYCODE_DPAD_UP, KEYCODE_CHANNEL_UP -> viewModel.zap(+1)
         KEYCODE_DPAD_DOWN, KEYCODE_CHANNEL_DOWN -> viewModel.zap(-1)
         KEYCODE_DPAD_CENTER, KEYCODE_ENTER -> showOverlay()
-        KEYCODE_DPAD_LEFT, KEYCODE_DPAD_RIGHT -> if (playback.seekable) {
-            val step = if (code == KEYCODE_DPAD_RIGHT) SEEK_STEP_MS else -SEEK_STEP_MS
-            player.seekTo(playback.positionMs + step)
-        } else {
-            showOverlay()
-        }
+        // Seekable streams scrub instead (see handleKey); live ones show the controls.
+        KEYCODE_DPAD_LEFT, KEYCODE_DPAD_RIGHT -> showOverlay()
         KEYCODE_MEDIA_PLAY_PAUSE ->
             if (playback.status == PlaybackState.Status.PAUSED) player.resume() else player.pause()
         else -> return false

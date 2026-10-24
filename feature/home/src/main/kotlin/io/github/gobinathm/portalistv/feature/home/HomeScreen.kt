@@ -32,6 +32,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil3.ImageLoader
+import io.github.gobinathm.portalistv.core.datastore.HomeRow
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
@@ -83,10 +84,8 @@ private fun HomeContent(
     modifier: Modifier = Modifier,
 ) {
     val firstFocus = remember { FocusRequester() }
-    // The first focus goes to the top row: Continue Watching, else favorites, else the categories.
-    val focusContinue = state.error == null && state.continueWatching.isNotEmpty()
-    val focusFavorites = state.error == null && !focusContinue && state.favorites.isNotEmpty()
-    val focusCategories = state.error == null && !focusContinue && state.favorites.isEmpty()
+    // The first focus goes to the first row that is shown and has something in it.
+    val firstRow = state.rows.firstOrNull { row -> state.hasContent(row) }.takeIf { state.error == null }
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -98,36 +97,36 @@ private fun HomeContent(
         if (state.error != null) {
             item(key = "error") { ErrorPanel(state, onRetry, firstFocus) }
         }
-        if (state.continueWatching.isNotEmpty()) {
-            item(key = "continue") {
-                ContinueWatchingRow(state.continueWatching, imageLoader, actions, firstFocus.takeIf { focusContinue })
+        state.rows.filter { state.hasContent(it) }.forEach { row ->
+            val focus = firstFocus.takeIf { row == firstRow }
+            when (row) {
+                HomeRow.CONTINUE_WATCHING -> item(key = "continue") {
+                    ContinueWatchingRow(state.continueWatching, imageLoader, actions, focus)
+                }
+                HomeRow.FAVORITES -> item(key = "favorites") {
+                    FavoritesRow(state.favorites, imageLoader, actions, focus)
+                }
+                HomeRow.LIVE_TV -> {
+                    item(key = "categories") { CategoriesRow(state.categories, actions, focus, onCategoryFocused) }
+                    // The focused category's channels stay right under the categories.
+                    state.preview?.takeIf { it.channels.isNotEmpty() }?.let { preview ->
+                        item(key = "preview") { PreviewRow(preview, imageLoader, actions) }
+                    }
+                }
+                HomeRow.ON_DEMAND -> item(key = "vod") { VodCategoriesRow(state.vodCategories, actions, focus) }
             }
-        }
-        if (state.favorites.isNotEmpty()) {
-            item(key = "favorites") {
-                FavoritesRow(state.favorites, imageLoader, actions, firstFocus.takeIf { focusFavorites })
-            }
-        }
-        if (state.categories.isNotEmpty()) {
-            item(key = "categories") {
-                CategoriesRow(state.categories, actions, firstFocus.takeIf { focusCategories }, onCategoryFocused)
-            }
-        }
-        state.preview?.takeIf { it.channels.isNotEmpty() }?.let { preview ->
-            item(key = "preview") { PreviewRow(preview, imageLoader, actions) }
-        }
-        if (state.vodCategories.isNotEmpty()) {
-            item(key = "vod") { VodCategoriesRow(state.vodCategories, actions) }
         }
     }
-    LaunchedEffect(
-        state.error != null,
-        state.continueWatching.isNotEmpty(),
-        state.favorites.isNotEmpty(),
-        state.categories.isNotEmpty(),
-    ) {
+    LaunchedEffect(state.error != null, firstRow) {
         runCatching { firstFocus.requestFocus() }
     }
+}
+
+private fun HomeUiState.hasContent(row: HomeRow): Boolean = when (row) {
+    HomeRow.CONTINUE_WATCHING -> continueWatching.isNotEmpty()
+    HomeRow.FAVORITES -> favorites.isNotEmpty()
+    HomeRow.LIVE_TV -> categories.isNotEmpty()
+    HomeRow.ON_DEMAND -> vodCategories.isNotEmpty()
 }
 
 @Composable

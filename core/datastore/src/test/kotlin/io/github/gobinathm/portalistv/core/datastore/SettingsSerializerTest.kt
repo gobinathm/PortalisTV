@@ -36,6 +36,14 @@ class SettingsSerializerTest {
             pictureInPicture = false,
             showAdultContent = true,
             startProfileUuid = "6f1c1f0e-0000-4000-8000-000000000001",
+            theme = AppTheme.OLED_BLACK,
+            accent = AccentColor.MINT,
+            homeRows = listOf(
+                HomeRowSetting(HomeRow.LIVE_TV),
+                HomeRowSetting(HomeRow.FAVORITES, visible = false),
+                HomeRowSetting(HomeRow.CONTINUE_WATCHING),
+                HomeRowSetting(HomeRow.ON_DEMAND),
+            ),
         )
         assertThat(serializer.readFrom(ByteArrayInputStream(write(settings)))).isEqualTo(settings)
     }

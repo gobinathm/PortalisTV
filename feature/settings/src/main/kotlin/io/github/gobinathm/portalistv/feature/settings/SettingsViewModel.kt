@@ -41,7 +41,7 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowAdultContent(enabled: Boolean) = update { it.copy(showAdultContent = enabled) }
 
-    private fun update(transform: (AppSettings) -> AppSettings) {
+    fun update(transform: (AppSettings) -> AppSettings) {
         viewModelScope.launch { repository.update(transform) }
     }
 

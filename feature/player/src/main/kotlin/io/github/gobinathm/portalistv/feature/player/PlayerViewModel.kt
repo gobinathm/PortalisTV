@@ -57,6 +57,8 @@ data class PlayerUiState(
     val guide: List<Programme> = emptyList(),
     /** What's playing when it's a movie or an episode rather than a channel. */
     val vod: VodTitle? = null,
+    /** Where left/right presses are taking playback; it seeks there once they pause. */
+    val scrubTargetMs: Long? = null,
 )
 
 data class VodTitle(val title: String, val subtitle: String?)
@@ -67,7 +69,7 @@ data class VodTitle(val title: String, val subtitle: String?)
  * read; profiles set to an external player get no internal player.
  */
 @HiltViewModel
-@Suppress("LongParameterList") // Injected collaborators; each is a separate concern.
+@Suppress("LongParameterList", "TooManyFunctions") // Injected collaborators; one entry point per player action.
 class PlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: ProfileRepository,
@@ -95,6 +97,7 @@ class PlayerViewModel @Inject constructor(
     private var tuneJob: Job? = null
     private var numberJob: Job? = null
     private var progressJob: Job? = null
+    private var scrubJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -147,6 +150,25 @@ class PlayerViewModel @Inject constructor(
                 delay(NUMBER_ENTRY_MS)
                 _state.update { it.copy(numberNotFound = null) }
             }
+        }
+    }
+
+    /**
+     * Moves the seek target forward or back without seeking yet, like other streaming apps: the
+     * picture keeps playing while the target is chosen, and one seek follows a short pause.
+     */
+    fun scrub(forward: Boolean, repeatCount: Int) {
+        val player = _player.value ?: return
+        val playback = player.state.value
+        if (!playback.seekable || playback.durationMs <= 0) return
+        val from = _state.value.scrubTargetMs ?: playback.positionMs
+        val target = scrubTarget(from, forward, repeatCount, playback.durationMs)
+        _state.update { it.copy(scrubTargetMs = target) }
+        scrubJob?.cancel()
+        scrubJob = viewModelScope.launch {
+            delay(SCRUB_COMMIT_MS)
+            player.seekTo(target)
+            _state.update { it.copy(scrubTargetMs = null) }
         }
     }
 

@@ -100,13 +100,13 @@ internal fun ContinueWatchingRow(
 }
 
 @Composable
-internal fun VodCategoriesRow(categories: List<VodCategory>, actions: HomeActions) {
-    CardRow(stringResource(R.string.home_row_vod), categories, key = { it.id }) { _, category ->
+internal fun VodCategoriesRow(categories: List<VodCategory>, actions: HomeActions, focus: FocusRequester?) {
+    CardRow(stringResource(R.string.home_row_vod), categories, key = { it.id }) { index, category ->
         IconCard(
             label = if (category.id == ALL_CATEGORIES) stringResource(R.string.home_vod_all) else category.title,
             mark = category.mark(),
             onClick = { actions.onOpenVodCategory(category) },
-            modifier = Modifier,
+            modifier = if (index == 0 && focus != null) Modifier.focusRequester(focus) else Modifier,
         )
     }
 }

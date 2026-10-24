@@ -22,6 +22,11 @@ internal data class StoredSettings(
     val pictureInPicture: Boolean = true,
     val showAdultContent: Boolean = false,
     val startProfileUuid: String? = null,
+    val theme: String = AppTheme.DARK.name,
+    val accent: String = AccentColor.AZURE.name,
+    /** Row names in order; unknown names are dropped and missing rows added on reading. */
+    val homeRowOrder: List<String> = emptyList(),
+    val hiddenHomeRows: Set<String> = emptySet(),
 )
 
 internal fun StoredSettings.toAppSettings() = AppSettings(
@@ -37,6 +42,12 @@ internal fun StoredSettings.toAppSettings() = AppSettings(
     pictureInPicture = pictureInPicture,
     showAdultContent = showAdultContent,
     startProfileUuid = startProfileUuid,
+    theme = enumOrDefault(theme, AppTheme.DARK),
+    accent = enumOrDefault(accent, AccentColor.AZURE),
+    homeRows = normalizedHomeRows(
+        homeRowOrder.mapNotNull { name -> HomeRow.entries.firstOrNull { it.name == name } }
+            .map { HomeRowSetting(it, visible = it.name !in hiddenHomeRows) },
+    ),
 )
 
 internal fun AppSettings.toStored() = StoredSettings(
@@ -50,6 +61,10 @@ internal fun AppSettings.toStored() = StoredSettings(
     pictureInPicture = pictureInPicture,
     showAdultContent = showAdultContent,
     startProfileUuid = startProfileUuid,
+    theme = theme.name,
+    accent = accent.name,
+    homeRowOrder = homeRows.map { it.row.name },
+    hiddenHomeRows = homeRows.filterNot { it.visible }.mapTo(HashSet()) { it.row.name },
 )
 
 private inline fun <reified E : Enum<E>> enumOrDefault(name: String, default: E): E =

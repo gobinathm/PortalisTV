@@ -198,6 +198,27 @@ internal fun NumberEntry(ui: PlayerUiState, modifier: Modifier = Modifier) {
     )
 }
 
+/** The seek bar while left/right choose a position: where playback is, and where it will go. */
+@Composable
+internal fun ScrubBar(targetMs: Long, playback: PlaybackState, modifier: Modifier = Modifier) {
+    val delta = targetMs - playback.positionMs
+    Column(
+        modifier
+            .fillMaxWidth()
+            .background(Brush.verticalGradient(ScrimColors))
+            .padding(horizontal = Spacing.screenHorizontal)
+            .padding(top = Spacing.xl * 2, bottom = Spacing.screenVertical),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s),
+    ) {
+        Text(
+            formatTime(targetMs) + "   (" + (if (delta >= 0) "+" else "-") + formatTime(kotlin.math.abs(delta)) + ")",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.White,
+        )
+        Progress(playback.copy(positionMs = targetMs))
+    }
+}
+
 /** A round icon button; its name appears underneath while it has focus. */
 @Composable
 private fun ControlButton(

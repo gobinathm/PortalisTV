@@ -13,7 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,15 +59,9 @@ private fun SettingsContent(
         contentPadding = PaddingValues(horizontal = Spacing.screenHorizontal, vertical = Spacing.screenVertical),
     ) {
         item { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.displayMedium) }
-        item {
-            Text(
-                stringResource(R.string.settings_applies_next),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = Spacing.s),
-            )
-        }
-        playbackRows(player, firstRow, viewModel, onPick = { picker = it })
+        appearanceRows(settings, viewModel, firstRow)
+        homeRowRows(settings, viewModel)
+        playbackRows(player, viewModel, onPick = { picker = it })
         backgroundRows(settings, viewModel)
         contentRows(settings, viewModel)
         // With one profile there is nothing to choose: it always opens.
@@ -93,19 +86,26 @@ private fun SettingsContent(
     }
 }
 
+@Composable
+private fun PlaybackNote() = Text(
+    stringResource(R.string.settings_applies_next),
+    style = MaterialTheme.typography.bodyMedium,
+    color = MaterialTheme.colorScheme.onSurfaceVariant,
+    modifier = Modifier.padding(bottom = Spacing.s),
+)
+
 private fun LazyListScope.playbackRows(
     player: PlayerSettings,
-    firstRow: FocusRequester,
     viewModel: SettingsViewModel,
     onPick: (Picker) -> Unit,
 ) {
     item { SectionHeader(stringResource(R.string.settings_section_playback)) }
+    item { PlaybackNote() }
     item {
         ValueRow(
             label = stringResource(R.string.settings_buffer),
             value = bufferLabel(player.networkCachingMs),
             onClick = { onPick(Picker.BUFFER) },
-            modifier = Modifier.focusRequester(firstRow),
         )
     }
     item {
