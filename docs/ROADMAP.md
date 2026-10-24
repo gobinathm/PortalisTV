@@ -35,6 +35,7 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 
 ## M6 — EPG
 - [ ] Timeline guide with smooth two-dimensional scrolling
+- [ ] Guide-style Live TV: browse a category as a TV guide, with each channel's programmes along a timeline
 
 ## M7 — Customization
 - [ ] Themes and accent, home-row editor, key mapping, parental lock
