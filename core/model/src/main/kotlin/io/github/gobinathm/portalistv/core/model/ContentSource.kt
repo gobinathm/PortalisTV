@@ -1,5 +1,7 @@
 package io.github.gobinathm.portalistv.core.model
 
+import java.io.IOException
+
 /**
  * Where a profile's content comes from. Screens use only this interface, so another kind of
  * source (M3U, Xtream) can be added without touching them. Every call may throw
@@ -22,6 +24,21 @@ interface ContentSource {
 
     /** A URL the player can open. Resolve it right before playback; links often expire. */
     suspend fun streamUrl(channel: LiveChannel): String
+
+    /** On-demand categories; empty when the source has no on-demand content. */
+    suspend fun vodCategories(): List<VodCategory> = emptyList()
+
+    /** One page of an on-demand category, newest first. Pages start at 1. */
+    suspend fun vodItems(categoryId: String, page: Int): PagedResult<VodItem> = PagedResult(emptyList(), 0, 1)
+
+    /** A series' seasons, in order. */
+    suspend fun seasons(series: VodItem): List<Season> = emptyList()
+
+    /** A season's episodes, in order. */
+    suspend fun episodes(series: VodItem, season: Season): List<Episode> = emptyList()
+
+    /** A URL for a movie, or for [episode] of a series. Resolve it right before playback. */
+    suspend fun vodStreamUrl(item: VodPlayback): String = throw IOException("No on-demand content")
 }
 
 data class SourceAccount(val displayName: String?, val message: String?)
@@ -43,6 +60,67 @@ data class LiveChannel(
     /** Opaque to the app; only the source that produced the channel understands it. */
     val playbackRef: String,
 )
+
+data class VodCategory(val id: String, val title: String, val adult: Boolean)
+
+/** A movie or a series in an on-demand list. */
+data class VodItem(
+    val id: String,
+    val title: String,
+    val description: String?,
+    val posterUrl: String?,
+    val year: String?,
+    val rating: String?,
+    val genres: String?,
+    val director: String?,
+    val actors: String?,
+    val durationMinutes: Int?,
+    val isSeries: Boolean,
+    val adult: Boolean,
+    /** Opaque to the app; only the source that produced the item understands it. */
+    val playbackRef: String?,
+)
+
+data class Season(val id: String, val number: Int?, val title: String)
+
+data class Episode(val id: String, val number: Int?, val title: String)
+
+/**
+ * What to play from on-demand: a movie (no season or episode), or an episode of a series. Small
+ * and serializable, so it can travel in navigation arguments and be stored for resuming.
+ */
+data class VodPlayback(
+    val itemId: String,
+    val seasonId: String? = null,
+    val episodeId: String? = null,
+    val playbackRef: String? = null,
+)
+
+/** How far a movie or episode has been watched, for resuming and the Continue Watching row. */
+data class WatchProgress(
+    val playback: VodPlayback,
+    /** The movie or series title. */
+    val title: String,
+    /** For an episode, e.g. "S1 E3 · Pilot". */
+    val subtitle: String?,
+    val posterUrl: String?,
+    val isSeries: Boolean,
+    val positionMs: Long,
+    val durationMs: Long,
+    val updatedAtMillis: Long,
+) {
+    /** Near enough to the end that the credits are probably all that's left. */
+    val finished: Boolean get() = durationMs > 0 && positionMs >= durationMs * FINISHED_FRACTION
+
+    val fraction: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+
+    /** Where to start playing: the saved position, or the start once finished. */
+    val resumeMs: Long get() = if (finished) 0 else positionMs
+
+    private companion object {
+        const val FINISHED_FRACTION = 0.95
+    }
+}
 
 /** A guide entry. */
 data class Programme(

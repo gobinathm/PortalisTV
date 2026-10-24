@@ -75,6 +75,8 @@ internal class VlcPlayer(
                 )
                 addOption(":network-caching=${settings.networkCachingMs}")
                 media.userAgent?.let { addOption(":http-user-agent=${httpSafeAgent(it)}") }
+                // Starting at the position avoids playing the opening seconds before a seek.
+                if (media.startMs > 0) addOption(":start-time=${media.startMs / MILLIS_PER_SECOND}")
             }
             // Waits for the previous stream's input thread to close.
             mediaPlayer.media = vlcMedia
@@ -170,6 +172,7 @@ internal class VlcPlayer(
         const val FAST_SEEK = true
         const val DISABLED_TRACK = -1
         const val FULL_BUFFER = 100f
+        const val MILLIS_PER_SECOND = 1000L
 
         fun vlcOptions(settings: PlayerSettings, verbose: Boolean, textSubtitles: Boolean): List<String> = buildList {
             // libVLC logs to logcat directly, bypassing the redacting logger, and its errors contain

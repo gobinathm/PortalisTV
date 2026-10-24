@@ -13,22 +13,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -37,11 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.Button
-import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.ImageLoader
-import io.github.gobinathm.portalistv.core.designsystem.component.CategoryMarkView
+import io.github.gobinathm.portalistv.core.designsystem.component.CategoryRail
+import io.github.gobinathm.portalistv.core.designsystem.component.RailEntry
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
@@ -53,11 +45,7 @@ import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.NowNext
 import io.github.gobinathm.portalistv.core.model.Programme
 import io.github.gobinathm.portalistv.core.model.nowNext
-import kotlinx.coroutines.delay
 import android.text.format.DateFormat as AndroidDateFormat
-
-/** Pause on a category before its channels load, so moving down the rail doesn't load every one. */
-private const val SELECT_ON_FOCUS_DELAY_MS = 400L
 
 /**
  * Live TV: a category rail on the left and the selected category's channels on the right.
@@ -106,51 +94,13 @@ private fun LiveContent(
             .backdrop(MaterialTheme.colorScheme)
             .padding(vertical = Spacing.screenVertical),
     ) {
-        CategoryRail(state, actions.onSelectCategory, Modifier.width(320.dp).fillMaxHeight())
+        CategoryRail(
+            entries = state.categories.map { RailEntry(it.id, it.label(), it.mark()) },
+            selectedId = state.selectedCategoryId,
+            onSelect = actions.onSelectCategory,
+            modifier = Modifier.width(320.dp).fillMaxHeight(),
+        )
         ChannelPane(state, imageLoader, actions, Modifier.weight(1f).fillMaxHeight())
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun CategoryRail(state: LiveUiState, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
-    val selectedFocus = remember { FocusRequester() }
-    var focused by remember { mutableStateOf<String?>(null) }
-    val selectedId by rememberUpdatedState(state.selectedCategoryId)
-    val listState = rememberLazyListState()
-    LazyColumn(
-        state = listState,
-        modifier = modifier.focusRestorer(selectedFocus),
-        contentPadding = PaddingValues(start = Spacing.screenHorizontal, end = Spacing.m),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-    ) {
-        items(state.categories, key = { it.id }) { category ->
-            val selected = category.id == state.selectedCategoryId
-            ListItem(
-                selected = selected,
-                onClick = { onSelect(category.id) },
-                modifier = Modifier
-                    .then(if (selected) Modifier.focusRequester(selectedFocus) else Modifier)
-                    .onFocusChanged { if (it.isFocused) focused = category.id },
-                headlineContent = { Text(category.label(), maxLines = 1) },
-                leadingContent = { CategoryMarkView(category.mark()) },
-            )
-        }
-    }
-    LaunchedEffect(focused) {
-        val id = focused ?: return@LaunchedEffect
-        delay(SELECT_ON_FOCUS_DELAY_MS)
-        if (id != selectedId) onSelect(id)
-    }
-    LaunchedEffect(state.categories.isNotEmpty()) {
-        val index = state.categories.indexOfFirst { it.id == selectedId }
-        if (index < 0) return@LaunchedEffect
-        // A category opened from Home may be far down the rail: bring it on screen, let it be laid
-        // out, then focus it. Focusing an item that isn't composed fails, and the first one would
-        // take focus and select itself.
-        listState.scrollToItem(index)
-        withFrameNanos { }
-        runCatching { selectedFocus.requestFocus() }
     }
 }
 

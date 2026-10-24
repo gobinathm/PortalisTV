@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gobinathm.portalistv.core.common.log.Log
 import io.github.gobinathm.portalistv.core.data.FavoritesRepository
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
+import io.github.gobinathm.portalistv.core.data.WatchProgressRepository
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
 import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
@@ -16,17 +17,22 @@ import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.PagedResult
 import io.github.gobinathm.portalistv.core.model.PlayerEngine
 import io.github.gobinathm.portalistv.core.model.Programme
+import io.github.gobinathm.portalistv.core.model.WatchProgress
 import io.github.gobinathm.portalistv.core.player.MediaSource
 import io.github.gobinathm.portalistv.core.player.Player
 import io.github.gobinathm.portalistv.core.player.PlayerFactory
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.IOException
 import javax.inject.Inject
@@ -49,25 +55,34 @@ data class PlayerUiState(
     val numberNotFound: Int? = null,
     /** Now/next for the channel, when the portal has a guide for it. */
     val guide: List<Programme> = emptyList(),
+    /** What's playing when it's a movie or an episode rather than a channel. */
+    val vod: VodTitle? = null,
 )
 
+data class VodTitle(val title: String, val subtitle: String?)
+
 /**
- * Plays a live channel and zaps through its category. Owns the [Player] for the screen's lifetime,
- * created once the settings are read; profiles set to an external player get no internal player.
+ * Plays a live channel and zaps through its category, or plays a movie or episode and keeps track
+ * of how far it got. Owns the [Player] for the screen's lifetime, created once the settings are
+ * read; profiles set to an external player get no internal player.
  */
 @HiltViewModel
+@Suppress("LongParameterList") // Injected collaborators; each is a separate concern.
 class PlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: ProfileRepository,
     private val sources: ContentSources,
     private val settings: SettingsRepository,
     private val favorites: FavoritesRepository,
+    private val watchProgress: WatchProgressRepository,
     private val playerFactory: PlayerFactory,
 ) : ViewModel() {
     private val profileId: Long = savedStateHandle[ARG_PROFILE_ID] ?: 0L
     private val categoryId: String = savedStateHandle[ARG_CATEGORY_ID] ?: ALL_CATEGORIES
     private val page: Int = savedStateHandle[ARG_PAGE] ?: 1
     private val channelId: String? = savedStateHandle[ARG_CHANNEL_ID]
+
+    private val vod: VodRequest? = VodRequest.from(savedStateHandle)
 
     private val _player = MutableStateFlow<Player?>(null)
     val player: StateFlow<Player?> = _player.asStateFlow()
@@ -79,6 +94,7 @@ class PlayerViewModel @Inject constructor(
     private var lineup: ChannelLineup? = null
     private var tuneJob: Job? = null
     private var numberJob: Job? = null
+    private var progressJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -88,8 +104,12 @@ class PlayerViewModel @Inject constructor(
             if (!external) _player.value = playerFactory.create(appSettings.player)
             _state.update { it.copy(pictureInPicture = appSettings.pictureInPicture && !external) }
             val contentSource = sources.forProfile(profile)
-            val channels = lineup(contentSource, appSettings.showAdultContent).also { lineup = it }
             source = contentSource
+            if (vod != null) {
+                playVod(vod, resume = !vod.startOver)
+                return@launch
+            }
+            val channels = lineup(contentSource, appSettings.showAdultContent).also { lineup = it }
             val start = runCatching { channels.load(page) }.getOrDefault(emptyList())
             start.firstOrNull { it.id == channelId }?.let(::tune)
                 ?: _state.update { it.copy(resolving = false, linkFailed = true) }
@@ -110,6 +130,8 @@ class PlayerViewModel @Inject constructor(
      * many digits as channel numbers can have.
      */
     fun typeDigit(digit: Int) {
+        // Movies have no channel numbers to jump to.
+        if (vod != null) return
         val typed = (_state.value.typedNumber + digit).takeLast(MAX_NUMBER_DIGITS)
         _state.update { it.copy(typedNumber = typed, numberNotFound = null) }
         numberJob?.cancel()
@@ -128,14 +150,74 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /** Stops playback while the app is in the background. */
+    /** Stops playback while the app is in the background, remembering where a movie got to. */
     fun onBackground() {
+        saveProgress()
         _player.value?.stop()
     }
 
-    /** Re-tunes on return: live links expire, so a fresh one is requested. */
+    /** Re-tunes on return: links expire, so a fresh one is requested. A movie resumes where it stopped. */
     fun onForeground() {
-        _state.value.channel?.let(::tune)
+        val request = vod
+        if (request != null) playVod(request, resume = true) else _state.value.channel?.let(::tune)
+    }
+
+    private fun playVod(request: VodRequest, resume: Boolean) {
+        val contentSource = source ?: return
+        tuneJob?.cancel()
+        progressJob?.cancel()
+        _state.update { PlayerUiState(vod = request.title, pictureInPicture = it.pictureInPicture) }
+        tuneJob = viewModelScope.launch {
+            try {
+                val url = contentSource.vodStreamUrl(request.playback)
+                val startMs = if (resume) watchProgress.get(profileId, request.playback)?.resumeMs ?: 0 else 0
+                val media = MediaSource(
+                    url,
+                    listOfNotNull(request.title.title, request.title.subtitle).joinToString("  ·  "),
+                    isLive = false,
+                    userAgent = contentSource.playbackUserAgent,
+                    startMs = startMs,
+                )
+                val player = _player.value
+                if (player != null) {
+                    player.play(media)
+                    _state.update { it.copy(resolving = false) }
+                } else {
+                    _state.update { it.copy(resolving = false, externalStream = media) }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: IOException) {
+                Log.w(TAG, e) { "No stream link for on-demand item ${request.playback.itemId}" }
+                _state.update { it.copy(resolving = false, linkFailed = true) }
+            }
+        }
+        progressJob = viewModelScope.launch {
+            while (isActive) {
+                delay(PROGRESS_SAVE_MS)
+                saveProgress()
+            }
+        }
+    }
+
+    /** Stores the position of the movie or episode playing; nothing for live TV or before it starts. */
+    private fun saveProgress() {
+        val request = vod
+        // Nothing to keep before the stream has started, or for live TV.
+        val playback = _player.value?.state?.value?.takeIf { it.durationMs > 0 && it.positionMs > 0 }
+        if (request == null || playback == null) return
+        val progress = WatchProgress(
+            playback = request.playback,
+            title = request.title.title,
+            subtitle = request.title.subtitle,
+            posterUrl = request.posterUrl,
+            isSeries = request.isSeries,
+            positionMs = playback.positionMs,
+            durationMs = playback.durationMs,
+            updatedAtMillis = System.currentTimeMillis(),
+        )
+        // Not the view model's scope: the last save happens as the screen closes.
+        progressScope.launch { watchProgress.save(profileId, progress) }
     }
 
     /** Favorites come from the device; other categories page through the portal. */
@@ -187,6 +269,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        saveProgress()
         _player.value?.release()
     }
 
@@ -197,6 +280,10 @@ class PlayerViewModel @Inject constructor(
         const val ARG_CHANNEL_ID = "channelId"
         private const val MAX_NUMBER_DIGITS = 4
         private const val NUMBER_ENTRY_MS = 2_000L
+        private const val PROGRESS_SAVE_MS = 15_000L
+
+        /** Outlives the screen, so the position is saved even as the player closes. */
+        private val progressScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         private const val TAG = "Player"
     }
 }

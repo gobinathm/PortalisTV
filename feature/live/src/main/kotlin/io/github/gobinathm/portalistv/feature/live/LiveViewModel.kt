@@ -8,7 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gobinathm.portalistv.core.common.log.Log
 import io.github.gobinathm.portalistv.core.data.FavoritesRepository
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
-import io.github.gobinathm.portalistv.core.data.image.ChannelLogos
+import io.github.gobinathm.portalistv.core.data.image.PortalImages
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
 import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
@@ -64,7 +64,7 @@ class LiveViewModel @Inject constructor(
     private val sources: ContentSources,
     private val settings: SettingsRepository,
     private val favorites: FavoritesRepository,
-    private val logos: ChannelLogos,
+    private val images: PortalImages,
 ) : ViewModel() {
     private val profileId: Long = savedStateHandle[ARG_PROFILE_ID] ?: 0L
     private val initialCategoryId: String = savedStateHandle[ARG_CATEGORY_ID] ?: ALL_CATEGORIES
@@ -140,7 +140,7 @@ class LiveViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val profile = repository.get(profileId) ?: return@launch
-                _imageLoader.value = logos.loader(profile)
+                _imageLoader.value = images.loader(profile)
                 showAdult = settings.settings.first().showAdultContent
                 val contentSource = sources.forProfile(profile).also { source = it }
                 val categories = contentSource.liveCategories().filter { showAdult || !it.adult }

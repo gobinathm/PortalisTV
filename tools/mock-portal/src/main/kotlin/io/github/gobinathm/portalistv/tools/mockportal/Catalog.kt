@@ -11,7 +11,7 @@ data class MockGenre(val id: String, val title: String, val censored: Boolean = 
  * HLS test streams. No third-party TV channel is referenced.
  */
 class Catalog(
-    /** Filler channels after the test streams; the default spans several pages, more stress long lists. */
+    /** Filler channels (and as many filler movies); the default spans several pages, more stress long lists. */
     fillerChannels: Int = DEFAULT_FILLER_CHANNELS,
 ) {
     private companion object {
@@ -29,6 +29,19 @@ class Catalog(
         MockGenre("3", "Filler"),
         MockGenre("4", "Adult (empty)", censored = true),
     )
+
+    val vodCategories = listOf("10" to "Movies", "11" to "Series", "12" to "Filler movies")
+
+    /** On-demand items in the order they were "added"; the portal lists the newest first. */
+    val vod: List<MockVod> = buildList {
+        add(MockVod(1, "Big Buck Bunny", "10", BIG_BUCK_BUNNY))
+        add(MockVod(2, "Bip-Bop", "10", APPLE_BIPBOP))
+        add(MockVod(3, "Test Pattern Stories", "11", APPLE_ADVANCED, seasons = listOf(3, 2)))
+        val digits = fillerChannels.toString().length.coerceAtLeast(2)
+        repeat(fillerChannels) { i ->
+            add(MockVod(size + 1, "Filler movie %0${digits}d".format(i + 1), "12", BIG_BUCK_BUNNY))
+        }
+    }
 
     val channels: List<MockChannel> = buildList {
         add(MockChannel(1, "Apple Bip-Bop", "1", APPLE_BIPBOP))

@@ -16,6 +16,7 @@ import io.github.gobinathm.portalistv.core.designsystem.R
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
 import io.github.gobinathm.portalistv.core.model.LiveCategory
+import io.github.gobinathm.portalistv.core.model.VodCategory
 
 /** How a category is drawn in the rail: a genre icon when its name says what it is, else its initials. */
 sealed interface CategoryMark {
@@ -50,6 +51,9 @@ private val keywordIcons: List<Pair<List<String>, Int>> = listOf(
     listOf("documentar", "education", "learning", "science", "nature", "history", "discovery") to
         R.drawable.ic_category_learning,
 )
+
+/** On-demand categories get the same icons, from the same words. */
+fun VodCategory.mark(): CategoryMark = LiveCategory(id, title, adult).mark()
 
 private fun keywordIcon(words: List<String>): Int? =
     keywordIcons.firstOrNull { (keywords, _) -> words.any { word -> keywords.any(word::startsWith) } }?.second

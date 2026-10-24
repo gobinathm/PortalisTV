@@ -29,6 +29,7 @@ class MockPortal(
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     private val tokens = ConcurrentHashMap<String, Long>()
+    private val vod = MockVodApi(catalog)
     private val random = SecureRandom()
 
     fun handle(request: PortalRequest): PortalResponse {
@@ -50,6 +51,9 @@ class MockPortal(
         "itv" to "get_all_channels" -> allChannels()
         "itv" to "create_link" -> createLink(request)
         "itv" to "get_short_epg" -> shortEpg(request)
+        "vod" to "get_categories" -> vod.categories()
+        "vod" to "get_ordered_list" -> vod.orderedList(request.query)
+        "vod" to "create_link" -> vod.createLink(request.query)
         else -> null
     }
 

@@ -17,17 +17,24 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.ImageLoader
+import io.github.gobinathm.portalistv.core.designsystem.component.PosterImageCard
+import io.github.gobinathm.portalistv.core.designsystem.component.mark
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
+import io.github.gobinathm.portalistv.core.model.VodCategory
+import io.github.gobinathm.portalistv.core.model.WatchProgress
 import kotlinx.coroutines.delay
 
 /** A short pause on a category before its channels load, so moving along the row doesn't load every one. */
 private const val PREVIEW_DELAY_MS = 300L
+private val ContinuePoster = DpSize(132.dp, 198.dp)
 
 @Composable
 internal fun FavoritesRow(
@@ -67,6 +74,39 @@ internal fun CategoriesRow(
             modifier = Modifier
                 .onFocusChanged { if (it.isFocused) focused = category }
                 .then(if (index == 0 && focus != null) Modifier.focusRequester(focus) else Modifier),
+        )
+    }
+}
+
+@Composable
+internal fun ContinueWatchingRow(
+    items: List<WatchProgress>,
+    imageLoader: ImageLoader?,
+    actions: HomeActions,
+    focus: FocusRequester?,
+) {
+    CardRow(stringResource(R.string.home_row_continue), items, key = { it.playback.itemId }) { index, progress ->
+        PosterImageCard(
+            title = progress.title,
+            imageUrl = progress.posterUrl,
+            imageLoader = imageLoader,
+            onClick = { actions.onResume(progress) },
+            modifier = if (index == 0 && focus != null) Modifier.focusRequester(focus) else Modifier,
+            size = ContinuePoster,
+            subtitle = progress.subtitle,
+            progress = progress.fraction,
+        )
+    }
+}
+
+@Composable
+internal fun VodCategoriesRow(categories: List<VodCategory>, actions: HomeActions) {
+    CardRow(stringResource(R.string.home_row_vod), categories, key = { it.id }) { _, category ->
+        IconCard(
+            label = if (category.id == ALL_CATEGORIES) stringResource(R.string.home_vod_all) else category.title,
+            mark = category.mark(),
+            onClick = { actions.onOpenVodCategory(category) },
+            modifier = Modifier,
         )
     }
 }

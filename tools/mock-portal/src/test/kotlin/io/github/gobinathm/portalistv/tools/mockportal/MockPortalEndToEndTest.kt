@@ -6,6 +6,11 @@ import io.github.gobinathm.portalistv.core.stalker.AccountBlockedException
 import io.github.gobinathm.portalistv.core.stalker.DeviceIdentity
 import io.github.gobinathm.portalistv.core.stalker.StalkerClient
 import io.github.gobinathm.portalistv.core.stalker.StalkerConfig
+import io.github.gobinathm.portalistv.core.stalker.VodSection
+import io.github.gobinathm.portalistv.core.stalker.seriesContents
+import io.github.gobinathm.portalistv.core.stalker.vodCategories
+import io.github.gobinathm.portalistv.core.stalker.vodLink
+import io.github.gobinathm.portalistv.core.stalker.vodPage
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
@@ -70,6 +75,32 @@ class MockPortalEndToEndTest {
         assertThat(guide).hasSize(2)
         assertThat(guide[0].stopSeconds).isEqualTo(guide[1].startSeconds)
         assertThat(client.shortEpg(client.channels(genreId = "3", page = 1).items.first().id)).isEmpty()
+    }
+
+    @Test
+    fun `browses and plays on demand like a current portal`() = runTest {
+        val client = client()
+        assertThat(client.vodCategories(VodSection.MOVIES).map { it.title }).contains("Series")
+
+        val all = client.vodPage(VodSection.MOVIES, "*", page = 1)
+        assertThat(all.totalItems).isEqualTo(catalog.vod.size)
+        // Newest first.
+        assertThat(all.items.first().name).isEqualTo(catalog.vod.last().name)
+
+        val series = client.vodPage(VodSection.MOVIES, "11", page = 1).items.single()
+        assertThat(series.isSeries).isTrue()
+        val seasons = client.seriesContents(VodSection.MOVIES, series.id).items
+        assertThat(seasons.map { it.number }).containsExactly(2, 1).inOrder()
+        val season1 = seasons.last()
+        val episodes = client.seriesContents(VodSection.MOVIES, series.id, season1.id).items
+        assertThat(episodes.map { it.number }).containsExactly(3, 2, 1).inOrder()
+        val file = client.seriesContents(VodSection.MOVIES, series.id, season1.id, episodes.last().id).items.single()
+        assertThat(client.vodLink("/media/file_${file.id}.mpg")).startsWith("https://")
+
+        val movie = client.vodPage(VodSection.MOVIES, "10", page = 1).items.first { it.name == "Big Buck Bunny" }
+        val movieFile = client.seriesContents(VodSection.MOVIES, movie.id).items.single()
+        assertThat(client.vodLink("/media/file_${movieFile.id}.mpg"))
+            .isEqualTo("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
     }
 
     @Test

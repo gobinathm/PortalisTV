@@ -2,6 +2,9 @@
 <resources>
     <string name="home_row_favorites">Favorites</string>
     <string name="home_row_live">Live TV</string>
+    <string name="home_row_continue">Continue watching</string>
+    <string name="home_row_vod">On demand</string>
+    <string name="home_vod_all">Everything</string>
     <string name="home_all_channels">All channels</string>
     <string name="home_switch_profile">Switch profile</string>
     <string name="home_settings">Settings</string>

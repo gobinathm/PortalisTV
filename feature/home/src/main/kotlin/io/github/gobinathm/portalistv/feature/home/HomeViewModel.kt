@@ -8,7 +8,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gobinathm.portalistv.core.common.log.Log
 import io.github.gobinathm.portalistv.core.data.FavoritesRepository
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
-import io.github.gobinathm.portalistv.core.data.image.ChannelLogos
+import io.github.gobinathm.portalistv.core.data.WatchProgressRepository
+import io.github.gobinathm.portalistv.core.data.image.PortalImages
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
 import io.github.gobinathm.portalistv.core.data.usesPlainHttp
 import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
@@ -17,6 +18,8 @@ import io.github.gobinathm.portalistv.core.model.ContentSource
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.SourceException
+import io.github.gobinathm.portalistv.core.model.VodCategory
+import io.github.gobinathm.portalistv.core.model.WatchProgress
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,21 +50,27 @@ data class HomeUiState(
     val favorites: List<LiveChannel> = emptyList(),
     /** The first channels of the category last focused, shown under the categories. */
     val preview: CategoryPreview? = null,
+    /** Movies and episodes started and not finished, most recent first. */
+    val continueWatching: List<WatchProgress> = emptyList(),
+    /** On-demand categories, starting with everything (id [ALL_CATEGORIES]); empty without on-demand. */
+    val vodCategories: List<VodCategory> = emptyList(),
     val error: ConnectionError? = null,
     val portalMessage: String? = null,
 )
 
 data class CategoryPreview(val category: LiveCategory, val channels: List<LiveChannel>)
 
-/** The selected profile's home: its favorite channels and live TV categories. */
+/** The selected profile's home: what to continue watching, favorite channels, and the categories. */
 @HiltViewModel
+@Suppress("LongParameterList") // Injected collaborators; each is a separate concern.
 class HomeViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: ProfileRepository,
     private val sources: ContentSources,
     private val settings: SettingsRepository,
-    private val logos: ChannelLogos,
+    private val images: PortalImages,
     favorites: FavoritesRepository,
+    watchProgress: WatchProgressRepository,
 ) : ViewModel() {
     private val profileId: Long = savedStateHandle[PROFILE_ID_ARG] ?: 0L
 
@@ -85,6 +94,11 @@ class HomeViewModel @Inject constructor(
                 _state.update { it.copy(favorites = list.filter { channel -> showAdult || !channel.adult }) }
             }
         }
+        viewModelScope.launch {
+            watchProgress.continueWatching(profileId).collect { list ->
+                _state.update { it.copy(continueWatching = list) }
+            }
+        }
     }
 
     fun retry() {
@@ -92,7 +106,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val profile = repository.get(profileId) ?: return@launch
-                _imageLoader.value = logos.loader(profile)
+                _imageLoader.value = images.loader(profile)
                 _state.update { it.copy(profileName = profile.name, notSecure = profile.usesPlainHttp) }
                 val source = sources.forProfile(profile).also { source = it }
                 source.connect()
@@ -106,6 +120,7 @@ class HomeViewModel @Inject constructor(
                     )
                 }
                 previewCategory(all)
+                loadVodCategories(source)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: IOException) {
@@ -120,6 +135,19 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /** On demand is optional: a portal without it, or a failure here, just leaves the row out. */
+    private suspend fun loadVodCategories(source: ContentSource) {
+        val categories = try {
+            source.vodCategories().filter { showAdult || !it.adult }
+        } catch (e: IOException) {
+            Log.w(TAG, e) { "On-demand categories could not be loaded" }
+            return
+        }
+        if (categories.isEmpty()) return
+        val all = categories.firstOrNull { it.id == ALL_CATEGORIES } ?: VodCategory(ALL_CATEGORIES, "", false)
+        _state.update { it.copy(vodCategories = listOf(all) + categories.filter { c -> c.id != ALL_CATEGORIES }) }
     }
 
     /** Shows the first page of [category]'s channels under the categories. */

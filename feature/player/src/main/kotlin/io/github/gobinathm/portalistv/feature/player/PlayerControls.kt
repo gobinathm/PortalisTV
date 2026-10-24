@@ -117,7 +117,11 @@ internal fun ControlsOverlay(
 
 @Composable
 private fun TitleRow(ui: PlayerUiState, live: Boolean) {
-    val channel = ui.channel ?: return
+    val channel = ui.channel
+    if (channel == null) {
+        ui.vod?.let { VodTitleRow(it) }
+        return
+    }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
         if (live) {
             Text(
@@ -139,6 +143,20 @@ private fun TitleRow(ui: PlayerUiState, live: Boolean) {
         Text(channel.name, style = MaterialTheme.typography.headlineMedium, maxLines = 1)
     }
     NowPlaying(ui)
+}
+
+@Composable
+private fun VodTitleRow(title: VodTitle) {
+    Text(title.title, style = MaterialTheme.typography.headlineMedium, maxLines = 1)
+    title.subtitle?.let {
+        Text(
+            it,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 /** What's on now and next, under the channel name, when the portal has a guide for the channel. */

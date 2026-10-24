@@ -12,6 +12,8 @@ import io.github.gobinathm.portalistv.core.database.entity.toFavoriteEntity
 import io.github.gobinathm.portalistv.core.database.entity.toModel
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.TestProfiles
+import io.github.gobinathm.portalistv.core.model.VodPlayback
+import io.github.gobinathm.portalistv.core.model.WatchProgress
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
@@ -87,6 +89,34 @@ class EncryptedDatabaseTest {
             favorites.deleteAll(otherId)
             assertThat(favorites.observe(profileId).first().map { it.channelId }).containsExactly("1")
             assertThat(favorites.getAll(otherId)).isEmpty()
+        }
+    }
+
+    @Test
+    fun keepsWatchProgressPerEpisode() = runTest {
+        open(key).useDb { db ->
+            val profileId = db.profileDao().insert(TestProfiles.minimal().toEntity())
+            val dao = db.watchProgressDao()
+            val episode = WatchProgress(
+                playback = VodPlayback("502", seasonId = "601", episodeId = "701", playbackRef = "/media/502.mpg"),
+                title = "Test Series",
+                subtitle = "S1 E1 · Pilot",
+                posterUrl = "https://images.invalid/502.jpg",
+                isSeries = true,
+                positionMs = 60_000,
+                durationMs = 1_200_000,
+                updatedAtMillis = 10,
+            )
+            dao.upsert(episode.toEntity(profileId))
+            dao.upsert(episode.copy(positionMs = 90_000, updatedAtMillis = 20).toEntity(profileId))
+            dao.upsert(episode.copy(playback = VodPlayback("501"), title = "Movie", updatedAtMillis = 15).toEntity(profileId))
+
+            assertThat(dao.get(profileId, "502", "701")?.toModel()?.positionMs).isEqualTo(90_000)
+            assertThat(dao.observe(profileId).first().map { it.title }).containsExactly("Test Series", "Movie").inOrder()
+            assertThat(dao.get(profileId, "501", "")?.toModel()?.playback).isEqualTo(VodPlayback("501"))
+
+            dao.deleteItem(profileId, "502")
+            assertThat(dao.observeItem(profileId, "502").first()).isEmpty()
         }
     }
 

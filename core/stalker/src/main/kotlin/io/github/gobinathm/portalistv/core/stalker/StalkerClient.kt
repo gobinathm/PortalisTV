@@ -29,6 +29,9 @@ class StalkerClient(
     private val sessionLock = Mutex()
 
     private var endpoint: HttpUrl? = null
+
+    /** The API endpoint in use, for resolving relative image paths; null before connecting. */
+    internal val apiEndpoint: HttpUrl? get() = endpoint
     private var token: String? = null
 
     init {
@@ -94,8 +97,11 @@ class StalkerClient(
         return StreamUrls.clean(link)
     }
 
-    /** One API call with the current token; reconnects once if the portal no longer accepts it. */
-    private suspend fun call(type: String, action: String, vararg params: Pair<String, String>): JsonElement {
+    /**
+     * One API call with the current token; reconnects once if the portal no longer accepts it.
+     * Internal so each content area (e.g. on-demand, in Vod.kt) can keep its calls in its own file.
+     */
+    internal suspend fun call(type: String, action: String, vararg params: Pair<String, String>): JsonElement {
         val query = listOf("type" to type, "action" to action) + params
         val (currentEndpoint, currentToken) = sessionLock.withLock {
             if (endpoint == null) openSession()

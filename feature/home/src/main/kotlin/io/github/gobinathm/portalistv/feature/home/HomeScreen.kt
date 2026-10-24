@@ -39,15 +39,21 @@ import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
+import io.github.gobinathm.portalistv.core.model.VodCategory
+import io.github.gobinathm.portalistv.core.model.WatchProgress
 
 private val StatusDotSize = 10.dp
 
 /** What the home screen can ask the app to do. */
+@Suppress("LongParameterList") // One callback per destination.
 class HomeActions(
     val onOpenCategory: (LiveCategory) -> Unit,
     val onPlayFavorite: (LiveChannel) -> Unit,
     /** A channel from the row under the categories: play it, zapping within [categoryId]. */
     val onPlayChannel: (channel: LiveChannel, categoryId: String) -> Unit,
+    /** A movie or episode from Continue Watching: play it from where it stopped. */
+    val onResume: (WatchProgress) -> Unit,
+    val onOpenVodCategory: (VodCategory) -> Unit,
     val onSwitchProfile: () -> Unit,
     val onSettings: () -> Unit,
 )
@@ -77,9 +83,10 @@ private fun HomeContent(
     modifier: Modifier = Modifier,
 ) {
     val firstFocus = remember { FocusRequester() }
-    // Favorites take the first focus when there are any; otherwise the categories do.
-    val focusFavorites = state.error == null && state.favorites.isNotEmpty()
-    val focusCategories = state.error == null && state.favorites.isEmpty()
+    // The first focus goes to the top row: Continue Watching, else favorites, else the categories.
+    val focusContinue = state.error == null && state.continueWatching.isNotEmpty()
+    val focusFavorites = state.error == null && !focusContinue && state.favorites.isNotEmpty()
+    val focusCategories = state.error == null && !focusContinue && state.favorites.isEmpty()
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -90,6 +97,11 @@ private fun HomeContent(
         item(key = "header") { Header(state, actions) }
         if (state.error != null) {
             item(key = "error") { ErrorPanel(state, onRetry, firstFocus) }
+        }
+        if (state.continueWatching.isNotEmpty()) {
+            item(key = "continue") {
+                ContinueWatchingRow(state.continueWatching, imageLoader, actions, firstFocus.takeIf { focusContinue })
+            }
         }
         if (state.favorites.isNotEmpty()) {
             item(key = "favorites") {
@@ -104,8 +116,16 @@ private fun HomeContent(
         state.preview?.takeIf { it.channels.isNotEmpty() }?.let { preview ->
             item(key = "preview") { PreviewRow(preview, imageLoader, actions) }
         }
+        if (state.vodCategories.isNotEmpty()) {
+            item(key = "vod") { VodCategoriesRow(state.vodCategories, actions) }
+        }
     }
-    LaunchedEffect(state.error != null, state.favorites.isNotEmpty(), state.categories.isNotEmpty()) {
+    LaunchedEffect(
+        state.error != null,
+        state.continueWatching.isNotEmpty(),
+        state.favorites.isNotEmpty(),
+        state.categories.isNotEmpty(),
+    ) {
         runCatching { firstFocus.requestFocus() }
     }
 }
@@ -201,7 +221,7 @@ private fun HomePreview() {
                 favorites = listOf(LiveChannel("1", "Test Pattern", 1, null, "1", adult = false, playbackRef = "")),
             ),
             imageLoader = null,
-            actions = HomeActions({}, {}, { _, _ -> }, {}, {}),
+            actions = HomeActions({}, {}, { _, _ -> }, {}, {}, {}, {}),
             onRetry = {},
             onCategoryFocused = {},
         )

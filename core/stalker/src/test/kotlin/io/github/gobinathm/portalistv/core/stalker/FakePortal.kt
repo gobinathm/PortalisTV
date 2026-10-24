@@ -23,6 +23,9 @@ class FakePortal(
         "get_all_channels" to "get_all_channels",
         "create_link" to "create_link",
         "get_short_epg" to "get_short_epg",
+        "vod/get_categories" to "vod_categories",
+        "vod/get_ordered_list" to "vod_list",
+        "vod/create_link" to "vod_create_link",
     )
 
     /** Tokens the portal accepts; the handshake fixture's token is valid until a test revokes it. */
@@ -42,8 +45,10 @@ class FakePortal(
     override fun dispatch(request: RecordedRequest): MockResponse {
         requests += request
         val action = request.url.queryParameter("action")
+        val type = request.url.queryParameter("type")
         val authorized = action == "handshake" || request.headers["Authorization"] == "Bearer $validToken"
-        val fixture = fixtures[action]
+        // "type/action" entries win, for actions shared by several areas (e.g. get_ordered_list).
+        val fixture = fixtures["$type/$action"] ?: fixtures[action]
         return when {
             queued.isNotEmpty() -> queued.removeFirst()
             request.url.encodedPath != apiPath || fixture == null -> MockResponse.Builder().code(404).build()

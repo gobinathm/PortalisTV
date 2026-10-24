@@ -5,8 +5,10 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import io.github.gobinathm.portalistv.core.database.dao.FavoriteChannelDao
 import io.github.gobinathm.portalistv.core.database.dao.ProfileDao
+import io.github.gobinathm.portalistv.core.database.dao.WatchProgressDao
 import io.github.gobinathm.portalistv.core.database.entity.FavoriteChannelEntity
 import io.github.gobinathm.portalistv.core.database.entity.ProfileEntity
+import io.github.gobinathm.portalistv.core.database.entity.WatchProgressEntity
 
 /**
  * The app's only database, encrypted with SQLCipher.
@@ -15,18 +17,20 @@ import io.github.gobinathm.portalistv.core.database.entity.ProfileEntity
  * [Migrations]), checked by `MigrationTest`; destructive fallback is never enabled, because the
  * database holds the user's profiles.
  *
- * Versions: 1 profiles; 2 favorite channels.
+ * Versions: 1 profiles; 2 favorite channels; 3 watch progress.
  */
 @Database(
-    entities = [ProfileEntity::class, FavoriteChannelEntity::class],
-    version = 2,
+    entities = [ProfileEntity::class, FavoriteChannelEntity::class, WatchProgressEntity::class],
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class PortalisDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
 
     abstract fun favoriteChannelDao(): FavoriteChannelDao
+
+    abstract fun watchProgressDao(): WatchProgressDao
 
     companion object {
         const val FILE_NAME = "portalis.db"

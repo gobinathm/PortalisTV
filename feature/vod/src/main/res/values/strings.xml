@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vod_all">Everything</string>
+    <plurals name="vod_item_count">
+        <item quantity="one">%1$d title</item>
+        <item quantity="other">%1$d titles</item>
+    </plurals>
+    <string name="vod_loading">Loading…</string>
+    <string name="vod_empty">Nothing in this category.</string>
+    <string name="vod_failed">This couldn\'t be loaded.</string>
+    <string name="vod_retry">Try again</string>
+
+    <string name="vod_play">Play</string>
+    <!-- %1$s is a time such as 12:34. -->
+    <string name="vod_resume">Resume from %1$s</string>
+    <string name="vod_start_over">Start over</string>
+    <!-- %1$s names the episode, e.g. "S1 E3 · Pilot". -->
+    <string name="vod_continue_episode">Continue %1$s</string>
+    <string name="vod_minutes">%1$d min</string>
+    <string name="vod_director">Director: %1$s</string>
+    <string name="vod_cast">Cast: %1$s</string>
+    <string name="vod_seasons_loading">Loading seasons…</string>
+    <string name="vod_episodes_loading">Loading episodes…</string>
+    <string name="vod_no_episodes">No episodes found.</string>
+    <string name="vod_not_found">This title isn\'t available any more. Open it again from the list.</string>
+    <!-- %1$d is a season, %2$d an episode number, %3$s the episode title. -->
+    <string name="vod_episode_label">S%1$d E%2$d · %3$s</string>
+</resources>

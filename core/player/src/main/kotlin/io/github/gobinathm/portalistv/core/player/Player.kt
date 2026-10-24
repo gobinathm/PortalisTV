@@ -37,12 +37,16 @@ interface Player {
     fun release()
 }
 
-/** What to play. [userAgent] is sent with stream requests; some providers check it. */
+/**
+ * What to play. [userAgent] is sent with stream requests; some providers check it. [startMs]
+ * resumes a recording part-way through.
+ */
 data class MediaSource(
     val url: String,
     val title: String,
     val isLive: Boolean,
     val userAgent: String? = null,
+    val startMs: Long = 0,
 )
 
 data class PlaybackState(

@@ -14,6 +14,11 @@ import io.github.gobinathm.portalistv.core.stalker.DeviceIds
 import io.github.gobinathm.portalistv.core.stalker.ExchangeRecorder
 import io.github.gobinathm.portalistv.core.stalker.StalkerClient
 import io.github.gobinathm.portalistv.core.stalker.StalkerConfig
+import io.github.gobinathm.portalistv.core.stalker.VodSection
+import io.github.gobinathm.portalistv.core.stalker.seriesContents
+import io.github.gobinathm.portalistv.core.stalker.vodCategories
+import io.github.gobinathm.portalistv.core.stalker.vodLink
+import io.github.gobinathm.portalistv.core.stalker.vodPage
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.text.SimpleDateFormat
@@ -71,6 +76,8 @@ private suspend fun runSteps(client: StalkerClient): Boolean {
             val guides = channelIds.take(EPG_SAMPLE).map { client.shortEpg(it) }
             "${guides.count { it.isNotEmpty() }} of ${guides.size} channels have now/next"
         },
+        "vod" to { vodSummary(client, VodSection.MOVIES) },
+        "series" to { vodSummary(client, VodSection.SERIES) },
         "create_link" to {
             val cmd = channelCmd ?: error("no channel to resolve")
             "stream scheme ${client.createLink(cmd).substringBefore(':')}"
@@ -90,6 +97,49 @@ private suspend fun runSteps(client: StalkerClient): Boolean {
     }
     return true
 }
+
+/**
+ * Checks on demand the way the app uses it: categories, a page, a movie played through its file,
+ * and a series drilled down to an episode's file.
+ */
+private suspend fun vodSummary(client: StalkerClient, section: VodSection): String {
+    val categories = client.vodCategories(section).filter { it.id != "*" }
+    if (categories.isEmpty()) return "no categories"
+    // The first categories may hold only series (or only movies); look a little further.
+    val pages = categories.take(SEARCH_CATEGORIES).map { client.vodPage(section, it.id, page = 1) }
+    val movie = pages.firstNotNullOfOrNull { page -> page.items.firstOrNull { !it.isSeries } }
+    val series = pages.firstNotNullOfOrNull { page -> page.items.firstOrNull { it.isSeries } }
+    val parts = mutableListOf("${categories.size} categories", "${pages.first().totalItems} items in the first")
+    movie?.let { parts += "movie ${outcome { fileLink(client, section, it.id) }}" }
+    series?.let { parts += seriesSummary(client, section, it.id) }
+    return parts.joinToString(", ")
+}
+
+private suspend fun seriesSummary(client: StalkerClient, section: VodSection, seriesId: String): String {
+    val season = client.seriesContents(section, seriesId).items.firstOrNull { it.isSeason }
+    val episodes = season?.let { client.seriesContents(section, seriesId, it.id).items.filter { e -> e.isEpisode } }
+    val episode = episodes?.firstOrNull()
+    if (season == null || episode == null) return "series without seasons or episodes"
+    val link = outcome { fileLink(client, section, seriesId, season.id, episode.id) }
+    return "series: ${episodes.size} episodes in a season, episode $link"
+}
+
+/** The scheme of the stream link for an item's first file, as the app resolves it. */
+private suspend fun fileLink(
+    client: StalkerClient,
+    section: VodSection,
+    itemId: String,
+    seasonId: String = "0",
+    episodeId: String = "0",
+): String {
+    val file = client.seriesContents(section, itemId, seasonId, episodeId).items.first { it.isFile }
+    return "link ${client.vodLink("/media/file_${file.id}.mpg").substringBefore(':')}"
+}
+
+private suspend fun outcome(block: suspend () -> String): String =
+    runCatching { block() }.getOrElse { "failed (${it.javaClass.simpleName})" }
+
+private const val SEARCH_CATEGORIES = 6
 
 private fun configFrom(settings: Properties): StalkerConfig {
     fun value(key: String) = settings.getProperty(key)?.trim()?.takeIf { it.isNotEmpty() }

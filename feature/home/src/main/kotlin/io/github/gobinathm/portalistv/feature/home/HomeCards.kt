@@ -20,6 +20,7 @@ import androidx.tv.material3.Glow
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.ImageLoader
+import io.github.gobinathm.portalistv.core.designsystem.component.CategoryMark
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryMarkView
 import io.github.gobinathm.portalistv.core.designsystem.component.ChannelLogo
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
@@ -49,14 +50,20 @@ internal fun ChannelCard(channel: LiveChannel, imageLoader: ImageLoader?, onClic
 
 @Composable
 internal fun CategoryCard(category: LiveCategory, onClick: () -> Unit, modifier: Modifier) {
+    IconCard(
+        label = if (category.id == ALL_CATEGORIES) stringResource(R.string.home_all_channels) else category.title,
+        mark = category.mark(),
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+/** A category: its icon (or initials) above its name. */
+@Composable
+internal fun IconCard(label: String, mark: CategoryMark, onClick: () -> Unit, modifier: Modifier) {
     HomeCard(onClick, modifier) {
-        CategoryMarkView(category.mark(), size = CategoryIconSize)
-        Text(
-            if (category.id == ALL_CATEGORIES) stringResource(R.string.home_all_channels) else category.title,
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        CategoryMarkView(mark, size = CategoryIconSize)
+        Text(label, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

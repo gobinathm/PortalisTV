@@ -10,8 +10,10 @@ import io.github.gobinathm.portalistv.core.data.Clock
 import io.github.gobinathm.portalistv.core.data.FavoritesRepository
 import io.github.gobinathm.portalistv.core.data.LocalFavoritesRepository
 import io.github.gobinathm.portalistv.core.data.LocalProfileRepository
+import io.github.gobinathm.portalistv.core.data.LocalWatchProgressRepository
 import io.github.gobinathm.portalistv.core.data.ProfileDefaults
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
+import io.github.gobinathm.portalistv.core.data.WatchProgressRepository
 import io.github.gobinathm.portalistv.core.data.source.PortalConfig
 import io.github.gobinathm.portalistv.core.network.HttpClients
 import kotlinx.coroutines.CoroutineDispatcher
@@ -31,6 +33,9 @@ abstract class DataModule {
 
     @Binds
     abstract fun bindFavoritesRepository(repository: LocalFavoritesRepository): FavoritesRepository
+
+    @Binds
+    abstract fun bindWatchProgressRepository(repository: LocalWatchProgressRepository): WatchProgressRepository
 
     companion object {
         @Provides

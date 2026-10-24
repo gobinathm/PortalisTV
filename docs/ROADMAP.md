@@ -27,11 +27,11 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [x] Configurable network caching and decoding; picture-in-picture; external player
 
 ## M4 — Live TV
-- [ ] Categories, channel grid, zapping, favorites, now/next
+- [x] Categories, channel grid, zapping, favorites, now/next
 - [ ] Meets the scroll performance budget
 
 ## M5 — Movies & Series
-- [ ] Paged grids, detail pages, resume, continue watching
+- [x] Paged grids, detail pages, resume, continue watching
 
 ## M6 — EPG
 - [ ] Timeline guide with smooth two-dimensional scrolling

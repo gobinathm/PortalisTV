@@ -16,12 +16,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Image loaders for channel logos. Logos come from the portal, so each profile's loader uses that
- * profile's proxy and honors its plain-HTTP opt-in, like every other portal request. The caches
- * are shared between profiles.
+ * Image loaders for channel logos and on-demand posters. Both come from the portal, so each
+ * profile's loader uses that profile's proxy and honors its plain-HTTP opt-in, like every other portal
+ * request. The caches are shared between profiles.
  */
 @Singleton
-class ChannelLogos @Inject constructor(
+class PortalImages @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val httpClients: HttpClients,
     private val portalConfig: PortalConfig,
