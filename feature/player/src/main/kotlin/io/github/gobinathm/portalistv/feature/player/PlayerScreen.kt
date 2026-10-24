@@ -32,6 +32,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -39,16 +40,42 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gobinathm.portalistv.core.player.PlaybackState
+import io.github.gobinathm.portalistv.core.player.Player
 import kotlinx.coroutines.delay
 
 private const val OVERLAY_TIMEOUT_MS = 5_000L
 private const val SEEK_STEP_MS = 10_000L
 
-/** Full-screen live playback. Up/Down zap, OK shows the controls, Left/Right seek when possible. */
+/**
+ * Full-screen live playback. Up/Down zap, OK shows the controls, Left/Right seek when possible.
+ * Profiles set to an external player hand the stream to that app and leave through [onExit].
+ */
 @Composable
-fun PlayerScreen(modifier: Modifier = Modifier, viewModel: PlayerViewModel = hiltViewModel()) {
+fun PlayerScreen(onExit: () -> Unit, modifier: Modifier = Modifier, viewModel: PlayerViewModel = hiltViewModel()) {
     val ui by viewModel.state.collectAsStateWithLifecycle()
-    val playback by viewModel.player.state.collectAsStateWithLifecycle()
+    val player by viewModel.player.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    ui.externalStream?.let { media ->
+        LaunchedEffect(media) {
+            val found = launchExternalPlayer(context, media)
+            viewModel.onExternalLaunched(found)
+            if (found) onExit()
+        }
+    }
+    val current = player
+    if (current == null) {
+        Box(modifier.fillMaxSize().background(Color.Black)) {
+            PlaybackStatus(ui, PlaybackState(), Modifier.align(Alignment.Center))
+        }
+        return
+    }
+    InternalPlayback(ui, current, viewModel, modifier)
+}
+
+@Composable
+private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: PlayerViewModel, modifier: Modifier) {
+    val playback by player.state.collectAsStateWithLifecycle()
+    val inPip = pictureInPicture(enabled = ui.pictureInPicture)
     var overlayVisible by remember { mutableStateOf(true) }
     // Bumped on every key press so the overlay's hide timer restarts.
     var interaction by remember { mutableIntStateOf(0) }
@@ -74,18 +101,19 @@ fun PlayerScreen(modifier: Modifier = Modifier, viewModel: PlayerViewModel = hil
             .onPreviewKeyEvent { event ->
                 interaction++
                 if (overlayVisible || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                handleKey(event.key.nativeKeyCode, playback, viewModel) { overlayVisible = true }
+                handleKey(event.key.nativeKeyCode, playback, player, viewModel) { overlayVisible = true }
             }
             .focusRequester(rootFocus)
             .focusable(),
     ) {
-        viewModel.player.VideoSurface(Modifier.fillMaxSize())
-        PlaybackStatus(ui, playback, Modifier.align(Alignment.Center))
-        if (overlayVisible) {
+        player.VideoSurface(Modifier.fillMaxSize())
+        // The small window shows only the picture.
+        if (!inPip) PlaybackStatus(ui, playback, Modifier.align(Alignment.Center))
+        if (overlayVisible && !inPip) {
             ControlsOverlay(
                 ui = ui,
                 playback = playback,
-                player = viewModel.player,
+                player = player,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
@@ -96,10 +124,10 @@ fun PlayerScreen(modifier: Modifier = Modifier, viewModel: PlayerViewModel = hil
 private fun handleKey(
     code: Int,
     playback: PlaybackState,
+    player: Player,
     viewModel: PlayerViewModel,
     showOverlay: () -> Unit,
 ): Boolean {
-    val player = viewModel.player
     when (code) {
         KEYCODE_DPAD_UP, KEYCODE_CHANNEL_UP -> viewModel.zap(+1)
         KEYCODE_DPAD_DOWN, KEYCODE_CHANNEL_DOWN -> viewModel.zap(-1)

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,6 +33,7 @@ import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Glow
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.theme.Focus
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
@@ -48,11 +50,17 @@ fun ProfilesScreen(
     onOpen: (Long) -> Unit,
     onEdit: (Long) -> Unit,
     onAdd: () -> Unit,
+    onSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfilesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ProfilesContent(state, onOpen, onEdit, onAdd, modifier) { canExport -> BackupActions(canExport) }
+    ProfilesContent(state, onOpen, onEdit, onAdd, modifier) { canExport ->
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+            BackupActions(canExport)
+            OutlinedButton(onClick = onSettings) { Text(stringResource(R.string.profiles_settings)) }
+        }
+    }
 }
 
 @Composable

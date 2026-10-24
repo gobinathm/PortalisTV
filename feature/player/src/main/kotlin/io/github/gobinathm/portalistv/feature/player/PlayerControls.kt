@@ -33,6 +33,7 @@ import io.github.gobinathm.portalistv.core.player.AspectMode
 import io.github.gobinathm.portalistv.core.player.PlaybackState
 import io.github.gobinathm.portalistv.core.player.PlaybackState.Status
 import io.github.gobinathm.portalistv.core.player.Player
+import io.github.gobinathm.portalistv.core.player.labelRes
 
 private const val SUBTITLES_OFF = "off"
 private const val MILLIS_PER_SECOND = 1000L
@@ -150,6 +151,7 @@ private fun PickerDialog(picker: Picker?, playback: PlaybackState, player: Playe
 @Composable
 internal fun PlaybackStatus(ui: PlayerUiState, playback: PlaybackState, modifier: Modifier = Modifier) {
     val message = when {
+        ui.noExternalPlayer -> stringResource(R.string.player_no_external)
         ui.linkFailed -> stringResource(R.string.player_error_link)
         playback.status == Status.ERROR -> stringResource(R.string.player_error_stream)
         ui.resolving || playback.status == Status.OPENING -> stringResource(R.string.player_loading)
@@ -163,14 +165,6 @@ internal fun PlaybackStatus(ui: PlayerUiState, playback: PlaybackState, modifier
             .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(Spacing.s))
             .padding(Spacing.m),
     )
-}
-
-private fun AspectMode.labelRes() = when (this) {
-    AspectMode.BEST_FIT -> R.string.aspect_best_fit
-    AspectMode.FILL -> R.string.aspect_fill
-    AspectMode.RATIO_16_9 -> R.string.aspect_16_9
-    AspectMode.RATIO_4_3 -> R.string.aspect_4_3
-    AspectMode.ORIGINAL -> R.string.aspect_original
 }
 
 internal fun formatTime(ms: Long): String {

@@ -12,10 +12,14 @@ import io.github.gobinathm.portalistv.feature.player.PlayerScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorViewModel
 import io.github.gobinathm.portalistv.feature.profiles.list.ProfilesScreen
+import io.github.gobinathm.portalistv.feature.settings.SettingsScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
 private data object ProfilesRoute
+
+@Serializable
+private data object SettingsRoute
 
 /**
  * Edits a profile, or creates one when [profileId] is 0. The property name is the argument key
@@ -42,7 +46,11 @@ fun PortalisNavHost() {
                 onOpen = { id -> navController.navigate(HomeRoute(id)) },
                 onEdit = { id -> navController.navigate(ProfileEditorRoute(id)) },
                 onAdd = { navController.navigate(ProfileEditorRoute()) },
+                onSettings = { navController.navigate(SettingsRoute) },
             )
+        }
+        composable<SettingsRoute> {
+            SettingsScreen()
         }
         composable<ProfileEditorRoute> {
             ProfileEditorScreen(onDone = { navController.popBackStack() })
@@ -56,7 +64,7 @@ fun PortalisNavHost() {
             )
         }
         composable<PlayerRoute> {
-            PlayerScreen()
+            PlayerScreen(onExit = { navController.popBackStack() })
         }
     }
 }

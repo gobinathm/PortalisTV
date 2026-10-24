@@ -1,4 +1,4 @@
-package io.github.gobinathm.portalistv.feature.profiles.component
+package io.github.gobinathm.portalistv.core.designsystem.component
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable

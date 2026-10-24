@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Settings</string>
+
+    <string name="settings_section_playback">Playback</string>
+    <string name="settings_buffer">Buffer before playing</string>
+    <string name="settings_seconds">%1$s seconds</string>
+    <string name="settings_seconds_default">%1$s seconds (default)</string>
+    <string name="settings_hw_decoding">Hardware decoding</string>
+    <string name="settings_hw_auto">Automatic</string>
+    <string name="settings_hw_on">Always</string>
+    <string name="settings_hw_off">Off (software)</string>
+    <string name="settings_deinterlace">Deinterlace</string>
+    <string name="settings_deinterlace_auto">Automatic</string>
+    <string name="settings_deinterlace_on">Always</string>
+    <string name="settings_deinterlace_off">Off</string>
+    <string name="settings_aspect">Default picture size</string>
+    <string name="settings_time_stretch">Natural pitch while catching up</string>
+    <string name="settings_time_stretch_hint">Keeps voices natural when the player speeds up slightly to stay live.</string>
+    <string name="settings_audio_language">Preferred audio language</string>
+    <string name="settings_subtitle_language">Preferred subtitle language</string>
+    <string name="settings_language_default">Stream default</string>
+
+    <string name="settings_section_background">When you press Home</string>
+    <string name="settings_pip">Keep playing in a small window</string>
+    <string name="settings_pip_hint">Picture-in-picture, where the TV supports it. Otherwise playback stops.</string>
+
+    <string name="settings_applies_next">Changes apply from the next channel you play.</string>
+</resources>

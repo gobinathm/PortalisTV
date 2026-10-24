@@ -7,18 +7,20 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gobinathm.portalistv.core.common.log.Log
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
+import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.ContentSource
 import io.github.gobinathm.portalistv.core.model.LiveChannel
+import io.github.gobinathm.portalistv.core.model.PlayerEngine
 import io.github.gobinathm.portalistv.core.player.MediaSource
 import io.github.gobinathm.portalistv.core.player.Player
 import io.github.gobinathm.portalistv.core.player.PlayerFactory
-import io.github.gobinathm.portalistv.core.player.PlayerSettings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -30,22 +32,33 @@ data class PlayerUiState(
     val resolving: Boolean = true,
     /** The portal could not provide a stream for this channel. */
     val linkFailed: Boolean = false,
+    /** Continue in a picture-in-picture window when the user presses Home. */
+    val pictureInPicture: Boolean = false,
+    /** A stream to hand to the external player app; cleared once launched. */
+    val externalStream: MediaSource? = null,
+    /** The profile uses an external player, but no installed app can open the stream. */
+    val noExternalPlayer: Boolean = false,
 )
 
-/** Plays a live channel and zaps through its category. Owns the [Player] for the screen's lifetime. */
+/**
+ * Plays a live channel and zaps through its category. Owns the [Player] for the screen's lifetime,
+ * created once the settings are read; profiles set to an external player get no internal player.
+ */
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: ProfileRepository,
     private val sources: ContentSources,
-    playerFactory: PlayerFactory,
+    private val settings: SettingsRepository,
+    private val playerFactory: PlayerFactory,
 ) : ViewModel() {
     private val profileId: Long = savedStateHandle[ARG_PROFILE_ID] ?: 0L
     private val categoryId: String = savedStateHandle[ARG_CATEGORY_ID] ?: ALL_CATEGORIES
     private val page: Int = savedStateHandle[ARG_PAGE] ?: 1
     private val channelId: String? = savedStateHandle[ARG_CHANNEL_ID]
 
-    val player: Player = playerFactory.create(PlayerSettings())
+    private val _player = MutableStateFlow<Player?>(null)
+    val player: StateFlow<Player?> = _player.asStateFlow()
 
     private val _state = MutableStateFlow(PlayerUiState())
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
@@ -57,6 +70,10 @@ class PlayerViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val profile = repository.get(profileId) ?: return@launch
+            val appSettings = settings.settings.first()
+            val external = profile.playback.engine == PlayerEngine.EXTERNAL
+            if (!external) _player.value = playerFactory.create(appSettings.player)
+            _state.update { it.copy(pictureInPicture = appSettings.pictureInPicture && !external) }
             val contentSource = sources.forProfile(profile)
             val channels = ChannelLineup(contentSource, categoryId).also { lineup = it }
             source = contentSource
@@ -76,7 +93,9 @@ class PlayerViewModel @Inject constructor(
     }
 
     /** Stops playback while the app is in the background. */
-    fun onBackground() = player.stop()
+    fun onBackground() {
+        _player.value?.stop()
+    }
 
     /** Re-tunes on return: live links expire, so a fresh one is requested. */
     fun onForeground() {
@@ -86,13 +105,19 @@ class PlayerViewModel @Inject constructor(
     private fun tune(channel: LiveChannel) {
         val contentSource = source ?: return
         tuneJob?.cancel()
-        _state.value = PlayerUiState(channel = channel, resolving = true)
+        _state.update { PlayerUiState(channel = channel, pictureInPicture = it.pictureInPicture) }
         tuneJob = viewModelScope.launch {
             try {
                 val url = contentSource.streamUrl(channel)
                 val title = listOfNotNull(channel.number?.toString(), channel.name).joinToString("  ")
-                player.play(MediaSource(url, title, isLive = true, userAgent = contentSource.playbackUserAgent))
-                _state.update { it.copy(resolving = false) }
+                val media = MediaSource(url, title, isLive = true, userAgent = contentSource.playbackUserAgent)
+                val player = _player.value
+                if (player != null) {
+                    player.play(media)
+                    _state.update { it.copy(resolving = false) }
+                } else {
+                    _state.update { it.copy(resolving = false, externalStream = media) }
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: IOException) {
@@ -102,7 +127,14 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    override fun onCleared() = player.release()
+    /** The screen started the external player, or found none. */
+    fun onExternalLaunched(found: Boolean) {
+        _state.update { it.copy(externalStream = null, noExternalPlayer = !found) }
+    }
+
+    override fun onCleared() {
+        _player.value?.release()
+    }
 
     companion object {
         const val ARG_PROFILE_ID = "profileId"

@@ -10,13 +10,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import io.github.gobinathm.portalistv.core.data.ProfileError
 import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
+import io.github.gobinathm.portalistv.core.designsystem.component.SectionHeader
+import io.github.gobinathm.portalistv.core.designsystem.component.SwitchRow
 import io.github.gobinathm.portalistv.core.model.ExternalPlayerKeys
 import io.github.gobinathm.portalistv.core.model.MulticastProtocol
 import io.github.gobinathm.portalistv.core.model.PlayerEngine
 import io.github.gobinathm.portalistv.core.model.Secret
 import io.github.gobinathm.portalistv.feature.profiles.R
-import io.github.gobinathm.portalistv.feature.profiles.component.SectionHeader
-import io.github.gobinathm.portalistv.feature.profiles.component.SwitchRow
 
 internal fun LazyListScope.editorSections(editor: EditorController, firstField: FocusRequester, modifier: Modifier) {
     item(key = "general") { GeneralSection(editor, firstField, modifier) }
