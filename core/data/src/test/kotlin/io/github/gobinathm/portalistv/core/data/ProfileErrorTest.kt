@@ -11,6 +11,14 @@ import org.junit.Test
 class ProfileErrorTest {
     private val valid = TestProfiles.minimal()
 
+    @Test
+    fun `detects plain HTTP portals`() {
+        assertThat(valid.withUrl("http://portal.example/c/", allowHttp = true).usesPlainHttp).isTrue()
+        assertThat(valid.withUrl(" HTTP://portal.example/c/", allowHttp = true).usesPlainHttp).isTrue()
+        assertThat(valid.withUrl("https://portal.example/c/").usesPlainHttp).isFalse()
+        assertThat(valid.withUrl("not a url").usesPlainHttp).isFalse()
+    }
+
     private fun Profile.withUrl(url: String, allowHttp: Boolean = false) =
         copy(portal = portal.copy(url = Secret(url), allowInsecureHttp = allowHttp))
 

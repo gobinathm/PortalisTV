@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gobinathm.portalistv.core.common.log.Log
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
+import io.github.gobinathm.portalistv.core.data.usesPlainHttp
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.ContentSource
 import io.github.gobinathm.portalistv.core.model.LiveCategory
@@ -35,6 +36,8 @@ enum class ConnectionError {
 
 data class HomeUiState(
     val profileName: String = "",
+    /** The portal is reached over plain HTTP. */
+    val notSecure: Boolean = false,
     val step: ConnectionStep = ConnectionStep.CONNECTING,
     val accountName: String? = null,
     val categories: List<LiveCategory> = emptyList(),
@@ -66,11 +69,11 @@ class HomeViewModel @Inject constructor(
     }
 
     fun retry() {
-        _state.value = HomeUiState(profileName = _state.value.profileName)
+        _state.value = HomeUiState(profileName = _state.value.profileName, notSecure = _state.value.notSecure)
         viewModelScope.launch {
             try {
                 val profile = repository.get(profileId) ?: return@launch
-                _state.update { it.copy(profileName = profile.name) }
+                _state.update { it.copy(profileName = profile.name, notSecure = profile.usesPlainHttp) }
                 load(profile)
             } catch (e: CancellationException) {
                 throw e

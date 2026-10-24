@@ -23,8 +23,8 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [x] Verified against a real portal; reply shapes recorded as synthetic fixtures
 
 ## M3 — Player
-- [ ] libVLC playback, on-screen controls, audio and subtitle tracks, aspect ratio
-- [ ] Configurable network caching and decoding; picture-in-picture; external player
+- [x] libVLC playback, on-screen controls, audio and subtitle tracks, aspect ratio
+- [x] Configurable network caching and decoding; picture-in-picture; external player
 
 ## M4 — Live TV
 - [ ] Categories, channel grid, zapping, favorites, now/next

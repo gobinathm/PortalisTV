@@ -31,7 +31,7 @@ cd PortalisTV
 ./scripts/create-signing-key.sh     # one time: creates YOUR private signing key (kept out of git)
 ./gradlew :app:assembleRelease
 ```
-The first build downloads Gradle and the libraries and takes several minutes; later builds are much faster. The APKs appear in `app/build/outputs/apk/release/`: `app-arm64-v8a-release.apk` for most current TVs, `app-armeabi-v7a-release.apk` for older 32-bit boxes, and `app-universal-release.apk`, which works on both but is larger.
+The first build downloads Gradle and the libraries and takes several minutes; later builds are much faster. The APKs appear in `app/build/outputs/apk/release/`: `app-arm64-v8a-release.apk` for 64-bit TVs, `app-armeabi-v7a-release.apk` for 32-bit ones, and `app-universal-release.apk`, which works on both but is larger. Many current TVs run 32-bit apps only even on 64-bit chips (the Google TV Streamer is one), so if you are unsure, check with `adb shell getprop ro.product.cpu.abilist` or use the universal APK.
 
 If the file names end in `-unsigned.apk` instead, the signing key is missing: run `./scripts/create-signing-key.sh` and build again. Unsigned APKs cannot be installed.
 

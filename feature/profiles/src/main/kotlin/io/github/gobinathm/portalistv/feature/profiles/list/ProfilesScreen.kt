@@ -23,7 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -114,7 +118,7 @@ private fun ProfilePicker(
             items(profiles, key = { it.id }) { profile ->
                 ProfileTile(
                     title = profile.name,
-                    subtitle = profile.model,
+                    subtitle = profileSubtitle(profile),
                     initial = profile.name.firstOrNull()?.uppercase() ?: "?",
                     onClick = { onOpen(profile.id) },
                     onLongClick = { onEdit(profile.id) },
@@ -136,10 +140,22 @@ private fun ProfilePicker(
     LaunchedEffect(Unit) { firstTile.requestFocus() }
 }
 
+/** The device model, led by a warning when the portal uses plain HTTP. */
+@Composable
+private fun profileSubtitle(profile: ProfileSummary): AnnotatedString = buildAnnotatedString {
+    if (profile.notSecure) {
+        withStyle(SpanStyle(color = MaterialTheme.colorScheme.error)) {
+            append(stringResource(R.string.profiles_not_secure))
+        }
+        append(" · ")
+    }
+    append(profile.model)
+}
+
 @Composable
 private fun ProfileTile(
     title: String,
-    subtitle: String?,
+    subtitle: AnnotatedString?,
     initial: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -187,7 +203,7 @@ private fun ProfileTile(
 private fun ProfilesPreview() {
     PortalisTheme {
         ProfilesContent(
-            ProfilesUiState.Loaded(listOf(ProfileSummary(1, "Living room", "MAG250"))),
+            ProfilesUiState.Loaded(listOf(ProfileSummary(1, "Living room", "MAG250", notSecure = true))),
             onOpen = {},
             onEdit = {},
             onAdd = {},

@@ -22,4 +22,5 @@
     <string name="home_error_timeout">The portal didn\'t answer in time.</string>
     <string name="home_error_tls">A secure connection to the portal couldn\'t be established.</string>
     <string name="home_error_unknown">The connection failed.</string>
+    <string name="home_not_secure">Not secure: this portal uses plain HTTP, so your MAC address and viewing can be seen on the network.</string>
 </resources>

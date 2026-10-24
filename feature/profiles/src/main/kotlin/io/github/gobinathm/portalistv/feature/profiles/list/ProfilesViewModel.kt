@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gobinathm.portalistv.core.common.log.Log
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
+import io.github.gobinathm.portalistv.core.data.usesPlainHttp
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -12,7 +13,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
-data class ProfileSummary(val id: Long, val name: String, val model: String)
+data class ProfileSummary(val id: Long, val name: String, val model: String, val notSecure: Boolean = false)
 
 sealed interface ProfilesUiState {
     data object Loading : ProfilesUiState
@@ -27,7 +28,9 @@ sealed interface ProfilesUiState {
 class ProfilesViewModel @Inject constructor(repository: ProfileRepository) : ViewModel() {
     val state: StateFlow<ProfilesUiState> = repository.profiles
         .map<_, ProfilesUiState> { profiles ->
-            ProfilesUiState.Loaded(profiles.map { ProfileSummary(it.id, it.name, it.device.stbModel) })
+            ProfilesUiState.Loaded(
+                profiles.map { ProfileSummary(it.id, it.name, it.device.stbModel, it.usesPlainHttp) },
+            )
         }
         .catch { e ->
             Log.e(TAG, e) { "Profiles could not be loaded" }

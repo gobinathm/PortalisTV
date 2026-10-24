@@ -44,6 +44,10 @@ fun Profile.validate(): Set<ProfileError> = buildSet {
     }
 }
 
+/** The portal is reached over plain HTTP, so traffic, including the MAC and token, can be read on the network. */
+val Profile.usesPlainHttp: Boolean
+    get() = parseHttpUrl(portal.url.value.trim())?.scheme.equals("http", ignoreCase = true)
+
 private fun validatePortalUrl(url: String, allowInsecureHttp: Boolean): Set<ProfileError> {
     val uri = parseHttpUrl(url)
     return when {

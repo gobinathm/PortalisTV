@@ -93,6 +93,13 @@ private fun Header(state: HomeUiState, onRetry: () -> Unit, retryFocus: FocusReq
         verticalArrangement = Arrangement.spacedBy(Spacing.s),
     ) {
         Text(state.profileName, style = MaterialTheme.typography.displayMedium)
+        if (state.notSecure) {
+            Text(
+                stringResource(R.string.home_not_secure),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         val error = state.error
         if (error != null) {
             Text(stringResource(error.messageRes()), color = MaterialTheme.colorScheme.error)
