@@ -7,4 +7,6 @@ data class AppSettings(
     val player: PlayerSettings = PlayerSettings(),
     /** Keep playing in a small window when the user presses Home during playback. */
     val pictureInPicture: Boolean = true,
+    /** Show categories and channels the portal marks as adult. Off until the parental PIN exists (M7). */
+    val showAdultContent: Boolean = false,
 )

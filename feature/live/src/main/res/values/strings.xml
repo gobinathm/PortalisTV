@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_all_channels">All channels</string>
+    <plurals name="live_channel_count">
+        <item quantity="one">%1$d channel</item>
+        <item quantity="other">%1$d channels</item>
+    </plurals>
+    <string name="live_loading">Loading channels…</string>
+    <string name="live_empty">No channels in this category.</string>
+    <string name="live_failed">The channels couldn\'t be loaded.</string>
+    <string name="live_retry">Try again</string>
+</resources>

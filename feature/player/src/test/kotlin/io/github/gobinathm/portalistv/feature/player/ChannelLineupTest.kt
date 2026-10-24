@@ -54,16 +54,29 @@ class ChannelLineupTest {
     }
 
     @Test
+    fun `skips hidden adult channels, even a whole page of them`() = runTest {
+        val adultSource = PagedSource(total = 7, pageSize = 3, adultIds = setOf(3, 4, 5, 6))
+        val filtered = ChannelLineup(adultSource, "*", showAdult = false)
+        assertThat(filtered.load(1).map { it.id }).containsExactly("1", "2").inOrder()
+        assertThat(filtered.next(2)).isEqualTo(7)
+        assertThat(filtered.next(7, step = -1)).isEqualTo(2)
+    }
+
+    @Test
     fun `formats playback time`() {
         assertThat(formatTime(65_000)).isEqualTo("1:05")
         assertThat(formatTime(3_725_000)).isEqualTo("1:02:05")
     }
 }
 
-private fun channel(id: Int) =
-    LiveChannel(id.toString(), "Channel $id", id, null, null, adult = false, playbackRef = "$id")
+private fun channel(id: Int, adult: Boolean = false) =
+    LiveChannel(id.toString(), "Channel $id", id, null, null, adult = adult, playbackRef = "$id")
 
-private class PagedSource(private val total: Int, private val pageSize: Int) : ContentSource {
+private class PagedSource(
+    private val total: Int,
+    private val pageSize: Int,
+    private val adultIds: Set<Int> = emptySet(),
+) : ContentSource {
     val loads = mutableListOf<Int>()
     override val playbackUserAgent: String? = null
 
@@ -74,7 +87,7 @@ private class PagedSource(private val total: Int, private val pageSize: Int) : C
     override suspend fun liveChannels(categoryId: String, page: Int): PagedResult<LiveChannel> {
         loads += page
         val ids = (1..total).drop((page - 1) * pageSize).take(pageSize)
-        return PagedResult(ids.map(::channel), total, (total + pageSize - 1) / pageSize)
+        return PagedResult(ids.map { channel(it, it in adultIds) }, total, (total + pageSize - 1) / pageSize)
     }
 
     override suspend fun streamUrl(channel: LiveChannel) = "http://streams.invalid/${channel.id}"

@@ -63,6 +63,7 @@ private fun SettingsContent(settings: AppSettings, viewModel: SettingsViewModel,
         }
         playbackRows(player, firstRow, viewModel, onPick = { picker = it })
         backgroundRows(settings, viewModel)
+        contentRows(settings, viewModel)
     }
     LaunchedEffect(Unit) { runCatching { firstRow.requestFocus() } }
     picker?.let { current ->
@@ -138,6 +139,18 @@ private fun LazyListScope.backgroundRows(settings: AppSettings, viewModel: Setti
             checked = settings.pictureInPicture,
             onCheckedChange = viewModel::setPictureInPicture,
             hint = stringResource(R.string.settings_pip_hint),
+        )
+    }
+}
+
+private fun LazyListScope.contentRows(settings: AppSettings, viewModel: SettingsViewModel) {
+    item { SectionHeader(stringResource(R.string.settings_section_content)) }
+    item {
+        SwitchRow(
+            label = stringResource(R.string.settings_show_adult),
+            checked = settings.showAdultContent,
+            onCheckedChange = viewModel::setShowAdultContent,
+            hint = stringResource(R.string.settings_show_adult_hint),
         )
     }
 }

@@ -23,6 +23,8 @@ class SettingsViewModel @Inject constructor(private val repository: SettingsRepo
 
     fun setPictureInPicture(enabled: Boolean) = update { it.copy(pictureInPicture = enabled) }
 
+    fun setShowAdultContent(enabled: Boolean) = update { it.copy(showAdultContent = enabled) }
+
     private fun update(transform: (AppSettings) -> AppSettings) {
         viewModelScope.launch { repository.update(transform) }
     }

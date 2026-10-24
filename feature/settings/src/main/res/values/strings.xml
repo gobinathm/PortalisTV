@@ -25,5 +25,9 @@
     <string name="settings_pip">Keep playing in a small window</string>
     <string name="settings_pip_hint">Picture-in-picture, where the TV supports it. Otherwise playback stops.</string>
 
+    <string name="settings_section_content">Content</string>
+    <string name="settings_show_adult">Show adult categories</string>
+    <string name="settings_show_adult_hint">Categories and channels your portal marks as adult. A PIN lock for them is coming later.</string>
+
     <string name="settings_applies_next">Changes apply from the next channel you play.</string>
 </resources>

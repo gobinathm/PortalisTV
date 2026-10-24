@@ -32,18 +32,26 @@ import io.github.gobinathm.portalistv.core.model.LiveChannel
 /** The selected profile's home: connection status and a first look at its live TV. */
 @Composable
 fun HomeScreen(
+    onOpenCategory: (LiveCategory) -> Unit,
     onPlayChannel: (LiveChannel) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    HomeContent(state, onRetry = viewModel::retry, onPlayChannel = onPlayChannel, modifier = modifier)
+    HomeContent(
+        state,
+        onRetry = viewModel::retry,
+        onOpenCategory = onOpenCategory,
+        onPlayChannel = onPlayChannel,
+        modifier = modifier,
+    )
 }
 
 @Composable
 private fun HomeContent(
     state: HomeUiState,
     onRetry: () -> Unit,
+    onOpenCategory: (LiveCategory) -> Unit,
     onPlayChannel: (LiveChannel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -64,7 +72,7 @@ private fun HomeContent(
                     key = { it.id },
                     label = LiveCategory::title,
                     focus = firstFocus.takeIf { state.error == null },
-                    onClick = {},
+                    onClick = onOpenCategory,
                 )
             }
         }
@@ -183,6 +191,7 @@ private fun HomePreview() {
                 totalChannels = 1,
             ),
             onRetry = {},
+            onOpenCategory = {},
             onPlayChannel = {},
         )
     }

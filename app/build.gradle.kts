@@ -76,6 +76,7 @@ dependencies {
     implementation(projects.core.security)
     implementation(projects.core.data)
     implementation(projects.feature.home)
+    implementation(projects.feature.live)
     implementation(projects.feature.profiles)
     implementation(projects.feature.player)
     implementation(projects.feature.settings)

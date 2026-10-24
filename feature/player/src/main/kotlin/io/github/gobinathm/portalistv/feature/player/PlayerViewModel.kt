@@ -75,7 +75,7 @@ class PlayerViewModel @Inject constructor(
             if (!external) _player.value = playerFactory.create(appSettings.player)
             _state.update { it.copy(pictureInPicture = appSettings.pictureInPicture && !external) }
             val contentSource = sources.forProfile(profile)
-            val channels = ChannelLineup(contentSource, categoryId).also { lineup = it }
+            val channels = ChannelLineup(contentSource, categoryId, appSettings.showAdultContent).also { lineup = it }
             source = contentSource
             val start = runCatching { channels.load(page) }.getOrDefault(emptyList())
             start.firstOrNull { it.id == channelId }?.let(::tune)

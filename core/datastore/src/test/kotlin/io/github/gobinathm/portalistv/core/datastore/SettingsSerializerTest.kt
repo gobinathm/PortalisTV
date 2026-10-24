@@ -34,6 +34,7 @@ class SettingsSerializerTest {
                 preferredSubtitleLanguage = "en",
             ),
             pictureInPicture = false,
+            showAdultContent = true,
         )
         assertThat(serializer.readFrom(ByteArrayInputStream(write(settings)))).isEqualTo(settings)
     }

@@ -8,6 +8,7 @@ import androidx.navigation.toRoute
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.feature.home.HomeScreen
 import io.github.gobinathm.portalistv.feature.home.HomeViewModel
+import io.github.gobinathm.portalistv.feature.live.LiveScreen
 import io.github.gobinathm.portalistv.feature.player.PlayerScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorViewModel
@@ -31,6 +32,10 @@ private data class ProfileEditorRoute(val profileId: Long = 0)
 /** The property name is the argument key that [HomeViewModel.PROFILE_ID_ARG] reads. */
 @Serializable
 private data class HomeRoute(val profileId: Long)
+
+/** Live TV opened at [categoryId]. Names match LiveViewModel's args. */
+@Serializable
+private data class LiveRoute(val profileId: Long, val categoryId: String = ALL_CATEGORIES)
 
 /** Plays [channelId], zapping within [categoryId] starting from its [page]. Names match PlayerViewModel's args. */
 @Serializable
@@ -58,8 +63,17 @@ fun PortalisNavHost() {
         composable<HomeRoute> { entry ->
             val profileId = entry.toRoute<HomeRoute>().profileId
             HomeScreen(
+                onOpenCategory = { category -> navController.navigate(LiveRoute(profileId, category.id)) },
                 onPlayChannel = { channel ->
                     navController.navigate(PlayerRoute(profileId, ALL_CATEGORIES, page = 1, channelId = channel.id))
+                },
+            )
+        }
+        composable<LiveRoute> { entry ->
+            val profileId = entry.toRoute<LiveRoute>().profileId
+            LiveScreen(
+                onPlay = { channel, categoryId, page ->
+                    navController.navigate(PlayerRoute(profileId, categoryId, page, channel.id))
                 },
             )
         }
