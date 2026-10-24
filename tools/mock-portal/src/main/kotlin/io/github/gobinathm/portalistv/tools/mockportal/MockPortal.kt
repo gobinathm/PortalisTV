@@ -180,7 +180,7 @@ class MockPortal(
         private const val SLOT_SECONDS = 30L * 60
         private const val MILLIS = 1000L
         private const val PARTS = 12
-        private const val MAX_EPG_SIZE = 10
+        private const val MAX_EPG_SIZE = 48
         const val DEFAULT_TOKEN_LIFETIME_MS = 60L * 60 * 1000
         private const val STATUS_NOT_REGISTERED = 2
         private const val WATCHDOG_SECONDS = 120

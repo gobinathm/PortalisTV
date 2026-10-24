@@ -47,8 +47,13 @@ internal class StalkerContentSource(
         PagedResult(result.items.map { it.toLive() }, result.totalItems, result.pageCount)
     }
 
-    override suspend fun nowNext(channel: LiveChannel): List<Programme> = mapErrors {
-        client.shortEpg(channel.id).map {
+    override suspend fun nowNext(channel: LiveChannel): List<Programme> = programmes(channel, size = 2)
+
+    // Portals without a per-day guide still answer the short guide for many hours ahead.
+    override suspend fun guide(channel: LiveChannel): List<Programme> = programmes(channel, GUIDE_SIZE)
+
+    private suspend fun programmes(channel: LiveChannel, size: Int): List<Programme> = mapErrors {
+        client.shortEpg(channel.id, size).map {
             Programme(it.title, it.description, it.startSeconds * MILLIS, it.stopSeconds * MILLIS)
         }
     }
@@ -135,6 +140,9 @@ internal class StalkerContentSource(
 
 private const val MILLIS = 1000L
 private const val MAX_PAGES = 30
+
+/** About 16 hours on a typical portal. */
+private const val GUIDE_SIZE = 30
 
 /** Translates portal client errors into [SourceException]; plain network errors pass through. */
 internal inline fun <T> mapErrors(block: () -> T): T = try {

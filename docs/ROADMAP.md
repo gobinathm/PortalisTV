@@ -48,5 +48,6 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [ ] **Signed release APKs** on GitHub Releases: per-ABI APKs, SHA-256 checksums, build attestations, published signing-certificate fingerprint, Obtainium support. Requires developer registration where Android developer verification is enforced.
 - [ ] Optional, off-by-default "new version available" check
 - [ ] Additional content sources (M3U, Xtream)
+- [ ] Opt-in channel logos matched by name (e.g. the open iptv-org database) for portals that send none; off by default, as it contacts a third party
 - [ ] Android TV home-screen channels
 - [ ] Remote control from a phone (pairing code and TLS)

@@ -59,6 +59,7 @@ fun main(args: Array<String>) {
 private suspend fun runSteps(client: StalkerClient): Boolean {
     var channelCmd: String? = null
     var channelIds: List<String> = emptyList()
+    var logoUrls: List<Pair<String, String?>> = emptyList()
     val steps: List<Pair<String, suspend () -> String>> = listOf(
         "connect" to {
             val account = client.connect()
@@ -69,12 +70,29 @@ private suspend fun runSteps(client: StalkerClient): Boolean {
             val page = client.channels(genreId = "*", page = 1)
             channelCmd = page.items.firstOrNull()?.cmd
             channelIds = page.items.map { it.id }
+            logoUrls = page.items.map { it.id to it.logoUrl }
             "${page.items.size} on page 1, ${page.totalItems} in total, ${page.pageCount} pages"
         },
         "short_epg" to {
             // Some channels have no guide; report how many of the first page do.
             val guides = channelIds.take(EPG_SAMPLE).map { client.shortEpg(it) }
             "${guides.count { it.isNotEmpty() }} of ${guides.size} channels have now/next"
+        },
+        "logos" to {
+            // Some portals send the same logo for every channel; compare with a file named after the id.
+            val distinct = logoUrls.mapNotNull { it.second }.distinct()
+            val (id, url) = logoUrls.drop(1).firstOrNull { it.second != null } ?: ("" to null)
+            val byId = url?.substringBeforeLast('/')?.let { "$it/$id.png" }
+            "${distinct.size} distinct logo URLs for ${logoUrls.size} channels; " +
+                "as sent ${url?.let(::httpStatus)}, named after the id ${byId?.let(::httpStatus)}"
+        },
+        "guide" to {
+            // The guide needs hours ahead, not just now/next; see how far one request reaches.
+            val guides = channelIds.take(EPG_SAMPLE).map { client.shortEpg(it, size = LONG_EPG_SIZE) }
+            val longest = guides.maxByOrNull { it.size }.orEmpty()
+            val seconds = if (longest.size < 2) 0 else longest.last().stopSeconds - longest.first().startSeconds
+            val hours = seconds / SECONDS_PER_HOUR
+            "up to ${longest.size} programmes ($hours h) per channel when asking for $LONG_EPG_SIZE"
         },
         "vod" to { vodSummary(client, VodSection.MOVIES) },
         "series" to { vodSummary(client, VodSection.SERIES) },
@@ -136,6 +154,13 @@ private suspend fun fileLink(
     return "link ${client.vodLink("/media/file_${file.id}.mpg").substringBefore(':')}"
 }
 
+/** HTTP status and size of an image, without printing its address. */
+private fun httpStatus(url: String): String = runCatching {
+    HttpClients.defaultClient().newCall(okhttp3.Request.Builder().url(url).head().build()).execute().use {
+        "${it.code} (${it.header("Content-Type")}, ${it.header("Content-Length")} bytes)"
+    }
+}.getOrElse { "failed (${it.javaClass.simpleName})" }
+
 private suspend fun outcome(block: suspend () -> String): String =
     runCatching { block() }.getOrElse { "failed (${it.javaClass.simpleName})" }
 
@@ -179,4 +204,6 @@ private fun configFrom(settings: Properties): StalkerConfig {
 }
 
 private const val EPG_SAMPLE = 5
+private const val LONG_EPG_SIZE = 30
+private const val SECONDS_PER_HOUR = 3600
 private const val DEFAULT_SERIAL = "062014N012345"

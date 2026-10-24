@@ -60,7 +60,7 @@ class StalkerClient(
     suspend fun channels(genreId: String, page: Int): Page<Channel> {
         val js = call("itv", "get_ordered_list", "genre" to genreId, "fav" to "0", "p" to page.toString())
         val data = js as? JsonObject ?: throw ProtocolException("Unexpected channel page")
-        val items = data["data"].objects().mapNotNull { parseChannel(it, endpoint) }
+        val items = dropSharedLogos(data["data"].objects().mapNotNull { parseChannel(it, endpoint) })
         return Page(
             items = items,
             totalItems = data.int("total_items") ?: items.size,

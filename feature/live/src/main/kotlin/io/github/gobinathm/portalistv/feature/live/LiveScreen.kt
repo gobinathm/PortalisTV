@@ -30,6 +30,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryRail
@@ -54,6 +55,7 @@ import android.text.format.DateFormat as AndroidDateFormat
 @Composable
 fun LiveScreen(
     onPlay: (channel: LiveChannel, categoryId: String, page: Int) -> Unit,
+    onOpenGuide: (categoryId: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LiveViewModel = hiltViewModel(),
 ) {
@@ -68,6 +70,7 @@ fun LiveScreen(
             onRetry = viewModel::retry,
             onPlay = { channel -> onPlay(channel, state.selectedCategoryId, viewModel.pageOf(channel)) },
             onToggleFavorite = viewModel::toggleFavorite,
+            onOpenGuide = { onOpenGuide(state.selectedCategoryId) },
         ),
         modifier = modifier,
     )
@@ -79,6 +82,7 @@ private class LiveActions(
     val onRetry: () -> Unit,
     val onPlay: (LiveChannel) -> Unit,
     val onToggleFavorite: (LiveChannel) -> Unit,
+    val onOpenGuide: () -> Unit,
 )
 
 @Composable
@@ -112,7 +116,7 @@ private fun ChannelPane(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.padding(end = Spacing.screenHorizontal), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
-        PaneHeader(state)
+        PaneHeader(state, actions.onOpenGuide)
         val favorites = state.selectedCategoryId == FAVORITES_CATEGORY
         val message = when {
             state.failed -> R.string.live_failed
@@ -133,10 +137,15 @@ private fun ChannelPane(
 }
 
 @Composable
-private fun PaneHeader(state: LiveUiState) {
+private fun PaneHeader(state: LiveUiState, onOpenGuide: () -> Unit) {
     val category = state.categories.firstOrNull { it.id == state.selectedCategoryId }
     Column(Modifier.padding(horizontal = Spacing.m)) {
-        Text(category?.label().orEmpty(), style = MaterialTheme.typography.headlineMedium)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.l)) {
+            Text(category?.label().orEmpty(), style = MaterialTheme.typography.headlineMedium)
+            if (state.channels.isNotEmpty()) {
+                OutlinedButton(onClick = onOpenGuide) { Text(stringResource(R.string.live_open_guide)) }
+            }
+        }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
             if (state.totalChannels > 0) {
                 Text(
@@ -197,7 +206,7 @@ private fun ChannelList(state: LiveUiState, imageLoader: ImageLoader?, actions: 
 }
 
 @Composable
-private fun LiveCategory.label(): String = when (id) {
+internal fun LiveCategory.label(): String = when (id) {
     ALL_CATEGORIES -> stringResource(R.string.live_all_channels)
     FAVORITES_CATEGORY -> stringResource(R.string.live_favorites)
     else -> title
@@ -231,7 +240,7 @@ private fun LivePreview() {
                 nowMillis = now,
             ),
             imageLoader = null,
-            actions = LiveActions({}, { _, _ -> }, {}, {}, {}),
+            actions = LiveActions({}, { _, _ -> }, {}, {}, {}, {}),
         )
     }
 }

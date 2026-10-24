@@ -13,6 +13,7 @@ import io.github.gobinathm.portalistv.core.model.WatchProgress
 import io.github.gobinathm.portalistv.feature.home.HomeActions
 import io.github.gobinathm.portalistv.feature.home.HomeScreen
 import io.github.gobinathm.portalistv.feature.home.HomeViewModel
+import io.github.gobinathm.portalistv.feature.live.GuideScreen
 import io.github.gobinathm.portalistv.feature.live.LiveScreen
 import io.github.gobinathm.portalistv.feature.player.PlayerScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorScreen
@@ -93,6 +94,10 @@ private fun WatchProgress.toRoute(profileId: Long) = VodPlayerRoute(
     vodIsSeries = isSeries,
 )
 
+/** A category as a TV guide. Names match LiveViewModel's args, which the guide shares. */
+@Serializable
+private data class GuideRoute(val profileId: Long, val categoryId: String)
+
 /** Plays [channelId], zapping within [categoryId] starting from its [page]. Names match PlayerViewModel's args. */
 @Serializable
 private data class PlayerRoute(val profileId: Long, val categoryId: String, val page: Int, val channelId: String)
@@ -145,6 +150,15 @@ private fun NavGraphBuilder.liveTv(navController: NavController) {
     composable<LiveRoute> { entry ->
         val profileId = entry.toRoute<LiveRoute>().profileId
         LiveScreen(
+            onPlay = { channel, categoryId, page ->
+                navController.navigate(PlayerRoute(profileId, categoryId, page, channel.id))
+            },
+            onOpenGuide = { categoryId -> navController.navigate(GuideRoute(profileId, categoryId)) },
+        )
+    }
+    composable<GuideRoute> { entry ->
+        val profileId = entry.toRoute<GuideRoute>().profileId
+        GuideScreen(
             onPlay = { channel, categoryId, page ->
                 navController.navigate(PlayerRoute(profileId, categoryId, page, channel.id))
             },

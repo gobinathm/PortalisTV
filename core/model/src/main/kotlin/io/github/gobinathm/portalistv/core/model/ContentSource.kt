@@ -7,6 +7,7 @@ import java.io.IOException
  * source (M3U, Xtream) can be added without touching them. Every call may throw
  * `java.io.IOException` for network and portal errors.
  */
+@Suppress("TooManyFunctions") // One call per kind of content; sources implement what they have.
 interface ContentSource {
     /** User agent the player should send with stream requests; some providers check it. */
     val playbackUserAgent: String?
@@ -21,6 +22,9 @@ interface ContentSource {
 
     /** What's on [channel] now and next, oldest first. Empty when the source has no guide for it. */
     suspend fun nowNext(channel: LiveChannel): List<Programme> = emptyList()
+
+    /** The programmes on [channel] from now on, as far ahead as the source tells (often most of a day). */
+    suspend fun guide(channel: LiveChannel): List<Programme> = nowNext(channel)
 
     /** A URL the player can open. Resolve it right before playback; links often expire. */
     suspend fun streamUrl(channel: LiveChannel): String

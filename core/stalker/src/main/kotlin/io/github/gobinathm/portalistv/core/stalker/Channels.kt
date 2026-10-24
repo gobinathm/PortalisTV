@@ -20,6 +20,20 @@ internal fun parseChannel(channel: JsonObject, endpoint: HttpUrl?): Channel? {
     )
 }
 
+/**
+ * Some portals send one placeholder logo for every channel. A logo shared by most of a page says
+ * nothing about the channel, so it's dropped and the app shows the channel's initials instead.
+ */
+internal fun dropSharedLogos(channels: List<Channel>): List<Channel> {
+    val counts = channels.mapNotNull { it.logoUrl }.groupingBy { it }.eachCount()
+    val placeholders = counts.filter { (_, count) -> count >= MIN_SHARED && count * 2 > channels.size }.keys
+    if (placeholders.isEmpty()) return channels
+    return channels.map { if (it.logoUrl in placeholders) it.copy(logoUrl = null) else it }
+}
+
+/** Fewer than this many channels may share a logo (e.g. HD and SD versions of one channel). */
+private const val MIN_SHARED = 3
+
 /** Logos are absolute URLs or file names under the portal's logo folder. */
 private fun resolveLogo(logo: String, endpoint: HttpUrl?): String? =
     logo.toHttpUrlOrNull()?.toString() ?: endpoint?.resolve("/stalker_portal/misc/logos/320/$logo")?.toString()

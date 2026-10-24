@@ -207,7 +207,8 @@ class LiveViewModel @Inject constructor(
 
     private suspend fun fetchGuide(contentSource: ContentSource, channel: LiveChannel) {
         try {
-            val programmes = guideRequests.withPermit { contentSource.nowNext(channel) }
+            // The full guide rather than now/next: the guide view shows hours ahead from the same data.
+            val programmes = guideRequests.withPermit { contentSource.guide(channel) }
             guide.store(channel.id, programmes, System.currentTimeMillis())
         } catch (e: CancellationException) {
             guide.release(channel.id)

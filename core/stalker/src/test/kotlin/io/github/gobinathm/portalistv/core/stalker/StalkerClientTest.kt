@@ -179,6 +179,18 @@ class StalkerClientTest {
     }
 
     @Test
+    fun `drops a logo most channels share, keeps one a few share`() {
+        fun channel(id: String, logo: String?) = Channel(id, id, null, "cmd", logo, null, censored = false)
+        val own = "https://logos.invalid/6.png"
+        val placeholder = (1..5).map { channel("$it", "https://logos.invalid/same.png") } + channel("6", own)
+        assertThat(dropSharedLogos(placeholder).map { it.logoUrl })
+            .containsExactly(null, null, null, null, null, own)
+            .inOrder()
+        val hdAndSd = listOf(channel("1", "a.png"), channel("2", "a.png"), channel("3", "b.png"), channel("4", "c.png"))
+        assertThat(dropSharedLogos(hdAndSd)).isEqualTo(hdAndSd)
+    }
+
+    @Test
     fun `parses all channels sent as a keyed object`() = runTest {
         assertThat(client().allChannels().map { it.id }).containsExactly("101", "102")
     }
