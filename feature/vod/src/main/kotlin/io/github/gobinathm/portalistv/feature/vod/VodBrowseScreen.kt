@@ -17,7 +17,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRestorer
@@ -34,14 +36,17 @@ import androidx.tv.material3.Text
 import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryRail
 import io.github.gobinathm.portalistv.core.designsystem.component.PosterImageCard
-import io.github.gobinathm.portalistv.core.designsystem.component.RailEntry
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
+import io.github.gobinathm.portalistv.core.designsystem.component.groupOf
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
+import io.github.gobinathm.portalistv.core.designsystem.component.railEntries
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
+import io.github.gobinathm.portalistv.core.model.CategoryNode
 import io.github.gobinathm.portalistv.core.model.VodCategory
 import io.github.gobinathm.portalistv.core.model.VodItem
+import io.github.gobinathm.portalistv.core.model.groupCategories
 
 private val RailWidth = 260.dp
 private val GridPoster = DpSize(132.dp, 198.dp)
@@ -82,11 +87,20 @@ private fun VodBrowseContent(
             .backdrop(MaterialTheme.colorScheme)
             .padding(vertical = Spacing.screenVertical),
     ) {
+        // Everything stays on top; the portal's categories are grouped by their first word.
+        val nodes = remember(state.categories) {
+            val (all, portal) = state.categories.partition { it.id == ALL_CATEGORIES }
+            all.map { CategoryNode.Single(it) } + groupCategories(portal) { it.title }
+        }
+        var expanded by remember(nodes) { mutableStateOf(groupOf(nodes, state.selectedCategoryId) { it.id }) }
+        val everything = stringResource(R.string.vod_all)
+        val label = { category: VodCategory -> if (category.id == ALL_CATEGORIES) everything else category.title }
         CategoryRail(
-            entries = state.categories.map { RailEntry(it.id, it.label(), it.mark()) },
+            entries = railEntries(nodes, expanded, { it.id }, label, { it.mark() }),
             selectedId = state.selectedCategoryId,
             onSelect = onSelectCategory,
             modifier = Modifier.width(RailWidth).fillMaxHeight(),
+            onToggleGroup = { key -> expanded = if (expanded == key) null else key },
         )
         Column(
             Modifier.weight(1f).fillMaxHeight().padding(end = Spacing.screenHorizontal),

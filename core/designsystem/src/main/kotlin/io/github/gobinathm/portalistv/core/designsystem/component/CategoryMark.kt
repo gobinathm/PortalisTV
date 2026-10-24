@@ -52,6 +52,9 @@ private val keywordIcons: List<Pair<List<String>, Int>> = listOf(
         R.drawable.ic_category_learning,
 )
 
+/** The mark for a bare name, such as a group of categories. */
+fun markForName(name: String): CategoryMark = LiveCategory("", name, adult = false).mark()
+
 /** On-demand categories get the same icons, from the same words. */
 fun VodCategory.mark(): CategoryMark = LiveCategory(id, title, adult).mark()
 

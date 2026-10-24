@@ -24,12 +24,15 @@ import androidx.tv.material3.Text
 import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.designsystem.component.PosterImageCard
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
+import io.github.gobinathm.portalistv.core.designsystem.component.markForName
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
+import io.github.gobinathm.portalistv.core.model.CategoryNode
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.VodCategory
 import io.github.gobinathm.portalistv.core.model.WatchProgress
+import io.github.gobinathm.portalistv.core.model.groupCategories
 import kotlinx.coroutines.delay
 
 /** A short pause on a category before its channels load, so moving along the row doesn't load every one. */
@@ -67,14 +70,19 @@ internal fun CategoriesRow(
         delay(PREVIEW_DELAY_MS)
         onFocused(category)
     }
-    CardRow(stringResource(R.string.home_row_live), categories, key = { it.id }) { index, category ->
-        CategoryCard(
-            category,
-            onClick = { actions.onOpenCategory(category) },
-            modifier = Modifier
-                .onFocusChanged { if (it.isFocused) focused = category }
-                .then(if (index == 0 && focus != null) Modifier.focusRequester(focus) else Modifier),
-        )
+    // One card per group (e.g. all the Tamil categories), so the row stays short.
+    val nodes = remember(categories) { groupedWithAllFirst(categories) { it.title } }
+    val title = stringResource(R.string.home_row_live)
+    CardRow(title, nodes, key = { it.key { category -> category.id } }) { index, node ->
+        val first = node.first()
+        val modifier = Modifier
+            .onFocusChanged { if (it.isFocused) focused = first }
+            .then(if (index == 0 && focus != null) Modifier.focusRequester(focus) else Modifier)
+        when (node) {
+            is CategoryNode.Single -> CategoryCard(node.item, onClick = { actions.onOpenCategory(first) }, modifier)
+            is CategoryNode.Group ->
+                IconCard(node.title, markForName(node.title), onClick = { actions.onOpenCategory(first) }, modifier)
+        }
     }
 }
 
@@ -101,14 +109,37 @@ internal fun ContinueWatchingRow(
 
 @Composable
 internal fun VodCategoriesRow(categories: List<VodCategory>, actions: HomeActions, focus: FocusRequester?) {
-    CardRow(stringResource(R.string.home_row_vod), categories, key = { it.id }) { index, category ->
+    val nodes = remember(categories) { groupedWithAllFirst(categories) { it.title } }
+    val title = stringResource(R.string.home_row_vod)
+    CardRow(title, nodes, key = { it.key { category -> category.id } }) { index, node ->
+        val first = node.first()
+        val label = when {
+            node is CategoryNode.Group -> node.title
+            first.id == ALL_CATEGORIES -> stringResource(R.string.home_vod_all)
+            else -> first.title
+        }
         IconCard(
-            label = if (category.id == ALL_CATEGORIES) stringResource(R.string.home_vod_all) else category.title,
-            mark = category.mark(),
-            onClick = { actions.onOpenVodCategory(category) },
+            label = label,
+            mark = if (node is CategoryNode.Group) markForName(node.title) else first.mark(),
+            onClick = { actions.onOpenVodCategory(first) },
             modifier = if (index == 0 && focus != null) Modifier.focusRequester(focus) else Modifier,
         )
     }
+}
+
+/** The all-items entry first, then the portal's categories grouped by their first word. */
+private fun <T> groupedWithAllFirst(categories: List<T>, title: (T) -> String): List<CategoryNode<T>> =
+    categories.take(1).map { CategoryNode.Single(it) } + groupCategories(categories.drop(1), title)
+
+/** The category a card opens: the item itself, or a group's first category. */
+private fun <T> CategoryNode<T>.first(): T = when (this) {
+    is CategoryNode.Single -> item
+    is CategoryNode.Group -> children.first().item
+}
+
+private fun <T> CategoryNode<T>.key(id: (T) -> String): String = when (this) {
+    is CategoryNode.Single -> id(item)
+    is CategoryNode.Group -> "group:$key"
 }
 
 @Composable

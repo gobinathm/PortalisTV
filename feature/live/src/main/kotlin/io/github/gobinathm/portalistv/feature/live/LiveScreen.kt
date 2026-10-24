@@ -16,7 +16,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,17 +36,20 @@ import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryRail
-import io.github.gobinathm.portalistv.core.designsystem.component.RailEntry
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
+import io.github.gobinathm.portalistv.core.designsystem.component.groupOf
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
+import io.github.gobinathm.portalistv.core.designsystem.component.railEntries
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
+import io.github.gobinathm.portalistv.core.model.CategoryNode
 import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.NowNext
 import io.github.gobinathm.portalistv.core.model.Programme
+import io.github.gobinathm.portalistv.core.model.groupCategories
 import io.github.gobinathm.portalistv.core.model.nowNext
 import android.text.format.DateFormat as AndroidDateFormat
 
@@ -98,11 +103,19 @@ private fun LiveContent(
             .backdrop(MaterialTheme.colorScheme)
             .padding(vertical = Spacing.screenVertical),
     ) {
+        // All channels and favorites stay on top; the portal's categories are grouped by their first word.
+        val nodes = remember(state.categories) {
+            val (fixed, portal) = state.categories.partition { it.id == ALL_CATEGORIES || it.id == FAVORITES_CATEGORY }
+            fixed.map { CategoryNode.Single(it) } + groupCategories(portal) { it.title }
+        }
+        var expanded by remember(nodes) { mutableStateOf(groupOf(nodes, state.selectedCategoryId) { it.id }) }
+        val labels = categoryLabels()
         CategoryRail(
-            entries = state.categories.map { RailEntry(it.id, it.label(), it.mark()) },
+            entries = railEntries(nodes, expanded, { it.id }, { labels(it) }, { it.mark() }),
             selectedId = state.selectedCategoryId,
             onSelect = actions.onSelectCategory,
             modifier = Modifier.width(320.dp).fillMaxHeight(),
+            onToggleGroup = { key -> expanded = if (expanded == key) null else key },
         )
         ChannelPane(state, imageLoader, actions, Modifier.weight(1f).fillMaxHeight())
     }
@@ -202,6 +215,20 @@ private fun ChannelList(state: LiveUiState, imageLoader: ImageLoader?, actions: 
             val items = listState.layoutInfo.visibleItemsInfo
             (items.firstOrNull()?.index ?: 0) to (items.lastOrNull()?.index ?: 0)
         }.collect { (first, last) -> actions.onVisible(first, last) }
+    }
+}
+
+/** [label] for use outside composition, e.g. when building rail entries. */
+@Composable
+private fun categoryLabels(): (LiveCategory) -> String {
+    val all = stringResource(R.string.live_all_channels)
+    val favorites = stringResource(R.string.live_favorites)
+    return { category ->
+        when (category.id) {
+            ALL_CATEGORIES -> all
+            FAVORITES_CATEGORY -> favorites
+            else -> category.title
+        }
     }
 }
 
