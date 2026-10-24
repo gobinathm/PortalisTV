@@ -21,6 +21,7 @@ internal data class StoredSettings(
     val preferredSubtitleLanguage: String? = null,
     val pictureInPicture: Boolean = true,
     val showAdultContent: Boolean = false,
+    val startProfileUuid: String? = null,
 )
 
 internal fun StoredSettings.toAppSettings() = AppSettings(
@@ -35,6 +36,7 @@ internal fun StoredSettings.toAppSettings() = AppSettings(
     ),
     pictureInPicture = pictureInPicture,
     showAdultContent = showAdultContent,
+    startProfileUuid = startProfileUuid,
 )
 
 internal fun AppSettings.toStored() = StoredSettings(
@@ -47,6 +49,7 @@ internal fun AppSettings.toStored() = StoredSettings(
     preferredSubtitleLanguage = player.preferredSubtitleLanguage,
     pictureInPicture = pictureInPicture,
     showAdultContent = showAdultContent,
+    startProfileUuid = startProfileUuid,
 )
 
 private inline fun <reified E : Enum<E>> enumOrDefault(name: String, default: E): E =

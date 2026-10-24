@@ -29,5 +29,9 @@
     <string name="settings_show_adult">Show adult categories</string>
     <string name="settings_show_adult_hint">Categories and channels your portal marks as adult. A PIN lock for them is coming later.</string>
 
+    <string name="settings_section_start">Start-up</string>
+    <string name="settings_start_profile">Open at start</string>
+    <string name="settings_start_profile_ask">Show the profile list</string>
+
     <string name="settings_applies_next">Changes apply from the next channel you play.</string>
 </resources>

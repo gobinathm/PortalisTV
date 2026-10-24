@@ -22,6 +22,7 @@ class FakePortal(
         "get_ordered_list" to "get_ordered_list",
         "get_all_channels" to "get_all_channels",
         "create_link" to "create_link",
+        "get_short_epg" to "get_short_epg",
     )
 
     /** Tokens the portal accepts; the handshake fixture's token is valid until a test revokes it. */

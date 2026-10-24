@@ -13,10 +13,10 @@ Portalis TV's own source code is licensed under the [Apache License 2.0](LICENSE
 - **Component:** `net.zetetic:sqlcipher-android` 4.19.1. **License:** BSD-style (Zetetic Community Edition).
 
 ## Other libraries
-AndroidX, Jetpack Compose, Room, Navigation, Hilt/Dagger, Tink, OkHttp, Okio, DataStore and kotlinx libraries are licensed under the Apache License 2.0.
+AndroidX, Jetpack Compose, Room, Navigation, Hilt/Dagger, Tink, OkHttp, Okio, Coil, DataStore and kotlinx libraries are licensed under the Apache License 2.0.
 
 ## Icons
-The player icons (`feature/player/src/main/res/drawable/ic_player_*.xml`) are from Google's Material Icons, Apache License 2.0.
+The player icons (`feature/player/src/main/res/drawable/ic_player_*.xml`) and the category and favorite icons (`core/designsystem/src/main/res/drawable/`) are from Google's Material Icons, Apache License 2.0.
 
 ## Test streams (tools/mock-portal only, not in the app)
 Big Buck Bunny, (c) copyright 2008 Blender Foundation, www.bigbuckbunny.org, CC BY 3.0. Apple and Mux sample HLS streams are referenced by URL only.

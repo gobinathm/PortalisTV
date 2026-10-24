@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="live_all_channels">All channels</string>
+    <string name="live_favorites">Favorites</string>
+    <string name="live_favorite">Favorite</string>
+    <string name="live_favorite_hint">Hold OK on a channel to add or remove it</string>
+    <string name="live_no_favorites">No favorites yet. Hold OK on any channel to add it here.</string>
+    <!-- %1$s is a start time, %2$s a programme title. -->
+    <string name="live_next">Next %1$s  %2$s</string>
     <plurals name="live_channel_count">
         <item quantity="one">%1$d channel</item>
         <item quantity="other">%1$d channels</item>

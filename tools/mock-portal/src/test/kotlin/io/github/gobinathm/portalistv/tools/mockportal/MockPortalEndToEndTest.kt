@@ -13,8 +13,9 @@ import org.junit.Test
 /** The app's real portal client against the mock portal over real HTTP. */
 class MockPortalEndToEndTest {
     private var now = 0L
+    private val catalog = Catalog()
     private val server = serve(
-        MockPortal(allowedMacs = setOf(MAC), tokenLifetimeMillis = 1_000, clock = { now }),
+        MockPortal(catalog, allowedMacs = setOf(MAC), tokenLifetimeMillis = 1_000, clock = { now }),
         port = 0,
         host = "127.0.0.1",
     )
@@ -55,15 +56,20 @@ class MockPortalEndToEndTest {
 
         val first = client.channels(genreId = "*", page = 1)
         assertThat(first.items).hasSize(MockPortal.PAGE_SIZE)
-        assertThat(first.totalItems).isEqualTo(Catalog.channels.size)
+        assertThat(first.totalItems).isEqualTo(catalog.channels.size)
         val last = client.channels(genreId = "*", page = first.pageCount)
-        assertThat(last.items.last().name).isEqualTo(Catalog.channels.last().name)
+        assertThat(last.items.last().name).isEqualTo(catalog.channels.last().name)
 
         assertThat(client.channels(genreId = "2", page = 1).items.map { it.name }).containsExactly("Big Buck Bunny")
-        assertThat(client.allChannels()).hasSize(Catalog.channels.size)
+        assertThat(client.allChannels()).hasSize(catalog.channels.size)
 
         val bunny = client.channels(genreId = "2", page = 1).items.single()
         assertThat(client.createLink(bunny.cmd)).isEqualTo("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
+
+        val guide = client.shortEpg(bunny.id)
+        assertThat(guide).hasSize(2)
+        assertThat(guide[0].stopSeconds).isEqualTo(guide[1].startSeconds)
+        assertThat(client.shortEpg(client.channels(genreId = "3", page = 1).items.first().id)).isEmpty()
     }
 
     @Test

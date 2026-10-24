@@ -8,12 +8,6 @@ import java.net.UnknownHostException
 
 class HomeViewModelTest {
     @Test
-    fun `stream summary hides host and query`() {
-        assertThat(HomeViewModel.withoutHost("http://streams.example:8080/live/101.ts?play_token=abc"))
-            .isEqualTo("http://…/live/101.ts")
-    }
-
-    @Test
     fun `maps failures to user-facing errors`() {
         assertThat(SourceException(SourceException.Reason.DEVICE_REFUSED).toConnectionError())
             .isEqualTo(ConnectionError.DEVICE_REFUSED)

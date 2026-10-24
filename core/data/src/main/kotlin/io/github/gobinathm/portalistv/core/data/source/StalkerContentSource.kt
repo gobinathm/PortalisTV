@@ -4,6 +4,7 @@ import io.github.gobinathm.portalistv.core.model.ContentSource
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.PagedResult
+import io.github.gobinathm.portalistv.core.model.Programme
 import io.github.gobinathm.portalistv.core.model.SourceAccount
 import io.github.gobinathm.portalistv.core.model.SourceException
 import io.github.gobinathm.portalistv.core.stalker.AccountBlockedException
@@ -33,6 +34,12 @@ internal class StalkerContentSource(
         PagedResult(result.items.map { it.toLive() }, result.totalItems, result.pageCount)
     }
 
+    override suspend fun nowNext(channel: LiveChannel): List<Programme> = mapErrors {
+        client.shortEpg(channel.id).map {
+            Programme(it.title, it.description, it.startSeconds * MILLIS, it.stopSeconds * MILLIS)
+        }
+    }
+
     override suspend fun streamUrl(channel: LiveChannel): String = mapErrors { client.createLink(channel.playbackRef) }
 
     private fun Channel.toLive() = LiveChannel(
@@ -45,6 +52,8 @@ internal class StalkerContentSource(
         playbackRef = cmd,
     )
 }
+
+private const val MILLIS = 1000L
 
 /** Translates portal client errors into [SourceException]; plain network errors pass through. */
 internal inline fun <T> mapErrors(block: () -> T): T = try {

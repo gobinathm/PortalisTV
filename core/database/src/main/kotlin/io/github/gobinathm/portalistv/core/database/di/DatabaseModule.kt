@@ -10,6 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import io.github.gobinathm.portalistv.core.database.DatabaseKey
 import io.github.gobinathm.portalistv.core.database.Migrations
 import io.github.gobinathm.portalistv.core.database.PortalisDatabase
+import io.github.gobinathm.portalistv.core.database.dao.FavoriteChannelDao
 import io.github.gobinathm.portalistv.core.database.dao.ProfileDao
 import io.github.gobinathm.portalistv.core.security.KeyManager
 import io.github.gobinathm.portalistv.core.security.KeyPurpose
@@ -45,4 +46,7 @@ object DatabaseModule {
 
     @Provides
     fun provideProfileDao(database: PortalisDatabase): ProfileDao = database.profileDao()
+
+    @Provides
+    fun provideFavoriteChannelDao(database: PortalisDatabase): FavoriteChannelDao = database.favoriteChannelDao()
 }

@@ -6,6 +6,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.github.gobinathm.portalistv.core.catalog.DeviceCatalog
+import io.github.gobinathm.portalistv.core.data.Clock
+import io.github.gobinathm.portalistv.core.data.FavoritesRepository
+import io.github.gobinathm.portalistv.core.data.LocalFavoritesRepository
 import io.github.gobinathm.portalistv.core.data.LocalProfileRepository
 import io.github.gobinathm.portalistv.core.data.ProfileDefaults
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
@@ -26,10 +29,16 @@ abstract class DataModule {
     @Binds
     abstract fun bindProfileRepository(repository: LocalProfileRepository): ProfileRepository
 
+    @Binds
+    abstract fun bindFavoritesRepository(repository: LocalFavoritesRepository): FavoritesRepository
+
     companion object {
         @Provides
         @IoDispatcher
         fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
+
+        @Provides
+        fun provideClock(): Clock = Clock(System::currentTimeMillis)
 
         @Provides
         @Singleton

@@ -44,6 +44,10 @@ gradlePlugin {
             id = libs.plugins.portalis.android.feature.get().pluginId
             implementationClass = "AndroidFeatureConventionPlugin"
         }
+        register("androidTest") {
+            id = libs.plugins.portalis.android.test.get().pluginId
+            implementationClass = "AndroidTestConventionPlugin"
+        }
         register("jvmLibrary") {
             id = libs.plugins.portalis.jvm.library.get().pluginId
             implementationClass = "JvmLibraryConventionPlugin"

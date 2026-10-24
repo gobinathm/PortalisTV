@@ -192,6 +192,25 @@ class StalkerClientTest {
     }
 
     @Test
+    fun `reads now and next in time order, skipping entries without times`() = runTest {
+        val programmes = client().shortEpg("101")
+
+        assertThat(programmes.map { it.title }).containsExactly("Morning Show", "Later Show").inOrder()
+        assertThat(programmes.first().startSeconds).isEqualTo(1_767_261_600)
+        assertThat(programmes.first().description).isEqualTo("A test programme.")
+        assertThat(programmes.last().description).isNull()
+        val request = portal.requestsFor("get_short_epg").single().url
+        assertThat(request.queryParameter("ch_id")).isEqualTo("101")
+        assertThat(request.queryParameter("size")).isEqualTo("2")
+    }
+
+    @Test
+    fun `reads an empty guide`() = runTest {
+        portal.fixtures["get_short_epg"] = "empty_list"
+        assertThat(client().shortEpg("101")).isEmpty()
+    }
+
+    @Test
     fun `rejects oversized replies`() = runTest {
         val client = StalkerClient(HttpClients.defaultClient(), config())
         client.connect()

@@ -15,4 +15,7 @@
     <string name="player_error_stream">This channel can\'t be played right now.</string>
     <string name="player_error_link">The portal didn\'t provide a stream for this channel.</string>
     <string name="player_no_external">No installed app can play this stream. Install a video player, or switch this profile back to the built-in player.</string>
+    <!-- %1$s is a start time, %2$s a programme title. -->
+    <string name="player_next">Next %1$s  %2$s</string>
+    <string name="player_number_not_found">No channel %1$d</string>
 </resources>

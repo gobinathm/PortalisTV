@@ -116,4 +116,5 @@
     <string name="error_proxy_host_required">Enter the proxy host.</string>
     <string name="error_proxy_port_invalid">Enter a port from 1 to 65535.</string>
     <string name="error_udpxy_url_invalid">Enter a full http:// address.</string>
+    <string name="profiles_opens_at_start">Opens at start</string>
 </resources>

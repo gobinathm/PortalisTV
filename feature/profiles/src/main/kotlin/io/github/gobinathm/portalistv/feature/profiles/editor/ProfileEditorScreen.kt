@@ -1,6 +1,5 @@
 package io.github.gobinathm.portalistv.feature.profiles.editor
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,6 +27,7 @@ import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
+import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.feature.profiles.R
 import io.github.gobinathm.portalistv.feature.profiles.component.ConfirmDialog
@@ -79,7 +79,7 @@ fun ProfileEditorScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .backdrop(MaterialTheme.colorScheme),
         contentPadding = PaddingValues(horizontal = Spacing.screenHorizontal, vertical = Spacing.screenVertical),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

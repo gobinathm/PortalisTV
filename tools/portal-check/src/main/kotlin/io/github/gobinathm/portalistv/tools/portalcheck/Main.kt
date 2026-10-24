@@ -53,6 +53,7 @@ fun main(args: Array<String>) {
 
 private suspend fun runSteps(client: StalkerClient): Boolean {
     var channelCmd: String? = null
+    var channelIds: List<String> = emptyList()
     val steps: List<Pair<String, suspend () -> String>> = listOf(
         "connect" to {
             val account = client.connect()
@@ -62,7 +63,13 @@ private suspend fun runSteps(client: StalkerClient): Boolean {
         "channels" to {
             val page = client.channels(genreId = "*", page = 1)
             channelCmd = page.items.firstOrNull()?.cmd
+            channelIds = page.items.map { it.id }
             "${page.items.size} on page 1, ${page.totalItems} in total, ${page.pageCount} pages"
+        },
+        "short_epg" to {
+            // Some channels have no guide; report how many of the first page do.
+            val guides = channelIds.take(EPG_SAMPLE).map { client.shortEpg(it) }
+            "${guides.count { it.isNotEmpty() }} of ${guides.size} channels have now/next"
         },
         "create_link" to {
             val cmd = channelCmd ?: error("no channel to resolve")
@@ -121,4 +128,5 @@ private fun configFrom(settings: Properties): StalkerConfig {
     )
 }
 
+private const val EPG_SAMPLE = 5
 private const val DEFAULT_SERIAL = "062014N012345"

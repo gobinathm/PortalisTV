@@ -1,5 +1,6 @@
 package io.github.gobinathm.portalistv.feature.player
 
+import android.text.format.DateFormat
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,18 +26,22 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.IconButton
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
+import io.github.gobinathm.portalistv.core.model.nowNext
 import io.github.gobinathm.portalistv.core.player.PlaybackState
 import io.github.gobinathm.portalistv.core.player.PlaybackState.Status
 import io.github.gobinathm.portalistv.core.player.Player
 import io.github.gobinathm.portalistv.core.player.labelRes
+import java.util.Date
 
 private const val MILLIS_PER_SECOND = 1000L
 private const val SECONDS_PER_MINUTE = 60
@@ -133,6 +138,46 @@ private fun TitleRow(ui: PlayerUiState, live: Boolean) {
         }
         Text(channel.name, style = MaterialTheme.typography.headlineMedium, maxLines = 1)
     }
+    NowPlaying(ui)
+}
+
+/** What's on now and next, under the channel name, when the portal has a guide for the channel. */
+@Composable
+private fun NowPlaying(ui: PlayerUiState) {
+    val nowNext = ui.guide.nowNext(System.currentTimeMillis())
+    val context = LocalContext.current
+    val timeFormat = remember(context) { DateFormat.getTimeFormat(context) }
+    val parts = listOfNotNull(
+        nowNext.now?.title,
+        nowNext.next?.let { stringResource(R.string.player_next, timeFormat.format(Date(it.startMillis)), it.title) },
+    )
+    if (parts.isNotEmpty()) {
+        Text(
+            parts.joinToString("   ·   "),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** The channel number being typed, or that the typed one doesn't exist. */
+@Composable
+internal fun NumberEntry(ui: PlayerUiState, modifier: Modifier = Modifier) {
+    val text = when {
+        ui.typedNumber.isNotEmpty() -> ui.typedNumber
+        ui.numberNotFound != null -> stringResource(R.string.player_number_not_found, ui.numberNotFound)
+        else -> return
+    }
+    Text(
+        text,
+        style = MaterialTheme.typography.displayMedium,
+        color = Color.White,
+        modifier = modifier
+            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(Spacing.s))
+            .padding(horizontal = Spacing.l, vertical = Spacing.s),
+    )
 }
 
 /** A round icon button; its name appears underneath while it has focus. */

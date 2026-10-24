@@ -39,6 +39,7 @@ import androidx.tv.material3.Glow
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
+import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.theme.Focus
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
@@ -59,6 +60,13 @@ fun ProfilesScreen(
     viewModel: ProfilesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val openAtStart by viewModel.openAtStart.collectAsStateWithLifecycle()
+    LaunchedEffect(openAtStart) {
+        openAtStart?.let { id ->
+            viewModel.onStartProfileOpened()
+            onOpen(id)
+        }
+    }
     ProfilesContent(state, onOpen, onEdit, onAdd, modifier) { canExport ->
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
             BackupActions(canExport)
@@ -79,7 +87,7 @@ private fun ProfilesContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .backdrop(MaterialTheme.colorScheme)
             .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.screenVertical),
         contentAlignment = Alignment.Center,
     ) {
@@ -140,7 +148,7 @@ private fun ProfilePicker(
     LaunchedEffect(Unit) { firstTile.requestFocus() }
 }
 
-/** The device model, led by a warning when the portal uses plain HTTP. */
+/** The device model (or the start-up marker), led by a warning when the portal uses plain HTTP. */
 @Composable
 private fun profileSubtitle(profile: ProfileSummary): AnnotatedString = buildAnnotatedString {
     if (profile.notSecure) {
@@ -149,7 +157,14 @@ private fun profileSubtitle(profile: ProfileSummary): AnnotatedString = buildAnn
         }
         append(" · ")
     }
-    append(profile.model)
+    if (profile.opensAtStart) {
+        // The tile is narrow; the start-up marker matters more than the model here.
+        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+            append(stringResource(R.string.profiles_opens_at_start))
+        }
+    } else {
+        append(profile.model)
+    }
 }
 
 @Composable

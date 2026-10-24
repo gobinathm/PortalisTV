@@ -11,4 +11,6 @@ dependencies {
     api(libs.androidx.tv.material)
     api(libs.androidx.compose.foundation)
     api(libs.androidx.compose.ui)
+    api(libs.coil.compose)
+    implementation(projects.core.model)
 }

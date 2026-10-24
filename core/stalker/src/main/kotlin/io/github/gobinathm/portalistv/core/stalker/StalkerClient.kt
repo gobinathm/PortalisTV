@@ -17,6 +17,7 @@ import java.io.IOException
  * calls reuse the token; when the portal stops accepting it, the client reconnects once and
  * retries. The client is safe to share between coroutines.
  */
+@Suppress("TooManyFunctions") // One method per portal call, plus the session steps.
 class StalkerClient(
     httpClient: OkHttpClient,
     private val config: StalkerConfig,
@@ -69,6 +70,16 @@ class StalkerClient(
         val js = call("itv", "get_all_channels")
         val data = (js as? JsonObject)?.get("data") ?: js
         return data.objects().mapNotNull { parseChannel(it, endpoint) }
+    }
+
+    /**
+     * The programme on now and the next ones on a channel, up to [size], oldest first. Entries
+     * without start and stop times are dropped. Portals without a guide return an empty list.
+     */
+    suspend fun shortEpg(channelId: String, size: Int = 2): List<Programme> {
+        val js = call("itv", "get_short_epg", "ch_id" to channelId, "size" to size.toString())
+        val list = (js as? JsonObject)?.get("data") ?: js
+        return list.objects().mapNotNull(::parseProgramme).sortedBy { it.startSeconds }
     }
 
     /**

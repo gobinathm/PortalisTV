@@ -58,6 +58,19 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release")
         }
+        // Release code, debug signature, and a hook in src/benchmark that creates a test profile.
+        // Only for :benchmark; never distributed.
+        create("benchmark") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".benchmark"
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
+        }
+    }
+
+    sourceSets {
+        // Benchmark builds behave like release builds, e.g. they never record portal traffic.
+        getByName("benchmark").kotlin.directories += "src/release/kotlin"
     }
 
     buildFeatures {
@@ -86,4 +99,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+    // Lets the benchmarks (and later, Baseline Profiles) compile the app ahead of time.
+    implementation(libs.androidx.profileinstaller)
 }

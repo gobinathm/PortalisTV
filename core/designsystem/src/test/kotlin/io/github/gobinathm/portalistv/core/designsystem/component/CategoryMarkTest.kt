@@ -1,7 +1,9 @@
-package io.github.gobinathm.portalistv.feature.live
+package io.github.gobinathm.portalistv.core.designsystem.component
 
 import com.google.common.truth.Truth.assertThat
+import io.github.gobinathm.portalistv.core.designsystem.R
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
+import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import org.junit.Test
 
@@ -29,8 +31,9 @@ class CategoryMarkTest {
     }
 
     @Test
-    fun `the all-channels entry has its own icon`() {
+    fun `the all-channels and favorites entries have their own icons`() {
         assertThat(mark("All", id = ALL_CATEGORIES)).isEqualTo(CategoryMark.Icon(R.drawable.ic_category_all))
+        assertThat(mark("", id = FAVORITES_CATEGORY)).isEqualTo(CategoryMark.Icon(R.drawable.ic_favorite))
     }
 
     @Test

@@ -7,6 +7,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.longOrNull
 
 // Portal JSON is loosely typed: the same field may be a number, a numeric string, "", or null
 // depending on the middleware version. These readers accept all of them.
@@ -16,6 +17,9 @@ internal fun JsonObject.string(key: String): String? =
 
 internal fun JsonObject.int(key: String): Int? =
     (this[key] as? JsonPrimitive)?.let { it.intOrNull ?: it.content.trim().toIntOrNull() }
+
+internal fun JsonObject.long(key: String): Long? =
+    (this[key] as? JsonPrimitive)?.let { it.longOrNull ?: it.content.trim().toLongOrNull() }
 
 /** Accepts true/false, 1/0 and "1"/"0". */
 internal fun JsonObject.flag(key: String): Boolean {

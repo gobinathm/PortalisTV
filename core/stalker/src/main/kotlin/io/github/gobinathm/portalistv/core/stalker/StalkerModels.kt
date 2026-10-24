@@ -35,3 +35,11 @@ data class Page<T>(
 ) {
     val pageCount: Int get() = if (pageSize <= 0) 1 else (totalItems + pageSize - 1) / pageSize
 }
+
+/** A guide entry. Times are Unix seconds. */
+data class Programme(
+    val title: String,
+    val description: String?,
+    val startSeconds: Long,
+    val stopSeconds: Long,
+)

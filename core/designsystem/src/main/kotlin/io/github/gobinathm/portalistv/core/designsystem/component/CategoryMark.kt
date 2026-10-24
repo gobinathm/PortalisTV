@@ -1,11 +1,24 @@
-package io.github.gobinathm.portalistv.feature.live
+package io.github.gobinathm.portalistv.core.designsystem.component
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Icon
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
+import io.github.gobinathm.portalistv.core.designsystem.R
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
+import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 
 /** How a category is drawn in the rail: a genre icon when its name says what it is, else its initials. */
-internal sealed interface CategoryMark {
+sealed interface CategoryMark {
     data class Icon(@DrawableRes val res: Int) : CategoryMark
 
     data class Initials(val text: String) : CategoryMark
@@ -15,10 +28,11 @@ internal sealed interface CategoryMark {
  * Portals send only a category's name, so the icon is guessed from words in it. Language and
  * other categories get initials rather than a guessed flag, which would often be wrong.
  */
-internal fun LiveCategory.mark(): CategoryMark {
+fun LiveCategory.mark(): CategoryMark {
     val words = title.lowercase().split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotEmpty() }
     val icon = when {
         id == ALL_CATEGORIES -> R.drawable.ic_category_all
+        id == FAVORITES_CATEGORY -> R.drawable.ic_favorite
         adult -> R.drawable.ic_category_adult
         else -> keywordIcon(words)
     }
@@ -45,3 +59,19 @@ private fun initials(words: List<String>): String = when {
     words.size == 1 -> words[0].take(2)
     else -> "${words[0].first()}${words[1].first()}"
 }.uppercase()
+
+private val LARGE_MARK = 32.dp
+
+/** A category's icon, or its initials, centered in a [size] square. */
+@Composable
+fun CategoryMarkView(mark: CategoryMark, modifier: Modifier = Modifier, size: Dp = 28.dp) {
+    Box(modifier.size(size), contentAlignment = Alignment.Center) {
+        when (mark) {
+            is CategoryMark.Icon -> Icon(painterResource(mark.res), contentDescription = null, Modifier.size(size))
+            is CategoryMark.Initials -> Text(
+                mark.text,
+                style = with(MaterialTheme.typography) { if (size > LARGE_MARK) headlineMedium else labelMedium },
+            )
+        }
+    }
+}

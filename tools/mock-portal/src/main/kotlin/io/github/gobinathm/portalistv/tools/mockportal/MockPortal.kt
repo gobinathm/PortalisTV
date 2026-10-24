@@ -19,7 +19,9 @@ data class PortalResponse(val code: Int, val contentType: String, val body: Stri
  * calls the app uses, with the same envelope (`{"js": ...}`) and loose typing real portals use,
  * and answers "Authorization failed." for missing or expired tokens.
  */
+@Suppress("TooManyFunctions") // One handler per portal call.
 class MockPortal(
+    private val catalog: Catalog = Catalog(),
     /** MAC addresses allowed to use the portal; empty allows every device. */
     private val allowedMacs: Set<String> = emptySet(),
     /** How long a token stays valid; set it low to exercise re-authentication. */
@@ -47,6 +49,7 @@ class MockPortal(
         "itv" to "get_ordered_list" -> orderedList(request)
         "itv" to "get_all_channels" -> allChannels()
         "itv" to "create_link" -> createLink(request)
+        "itv" to "get_short_epg" -> shortEpg(request)
         else -> null
     }
 
@@ -87,7 +90,7 @@ class MockPortal(
                 put("censored", 0)
             },
         )
-        Catalog.genres.forEach { genre ->
+        catalog.genres.forEach { genre ->
             add(
                 buildJsonObject {
                     put("id", genre.id)
@@ -103,7 +106,7 @@ class MockPortal(
     private fun orderedList(request: PortalRequest): JsonObject {
         val genre = request.query["genre"] ?: "*"
         val page = request.query["p"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
-        val matching = Catalog.channels.filter { genre == "*" || it.genreId == genre }
+        val matching = catalog.channels.filter { genre == "*" || it.genreId == genre }
         val items = matching.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE)
         return buildJsonObject {
             put("total_items", matching.size.toString())
@@ -115,22 +118,44 @@ class MockPortal(
 
     /** Sent as an object keyed by index, as some portals do. */
     private fun allChannels() = buildJsonObject {
-        put("total_items", Catalog.channels.size)
+        put("total_items", catalog.channels.size)
         put(
             "data",
             buildJsonObject {
-                Catalog.channels.forEachIndexed { i, channel -> put(i.toString(), channelJson(channel)) }
+                catalog.channels.forEachIndexed { i, channel -> put(i.toString(), channelJson(channel)) }
             },
         )
     }
 
     private fun createLink(request: PortalRequest): JsonElement {
         val id = request.query["cmd"]?.substringAfterLast("/ch/")?.trimEnd('_')?.toIntOrNull()
-        val channel = Catalog.channels.firstOrNull { it.id == id }
+        val channel = catalog.channels.firstOrNull { it.id == id }
         return buildJsonObject {
             put("id", channel?.id?.toString() ?: "")
             put("cmd", channel?.let { "ffmpeg ${it.streamUrl}" } ?: "")
             put("error", if (channel == null) "nothing_to_play" else "")
+        }
+    }
+
+    /** Half-hour programmes around now; filler channels have no guide, as many real channels don't. */
+    private fun shortEpg(request: PortalRequest) = buildJsonArray {
+        val channel = catalog.channels.firstOrNull { it.id.toString() == request.query["ch_id"] }
+        if (channel == null || channel.genreId == FILLER_GENRE) return@buildJsonArray
+        val size = request.query["size"]?.toIntOrNull()?.coerceIn(1, MAX_EPG_SIZE) ?: 2
+        val slot = clock() / MILLIS / SLOT_SECONDS
+        repeat(size) { i ->
+            val start = (slot + i) * SLOT_SECONDS
+            add(
+                buildJsonObject {
+                    put("id", "${channel.id}${slot + i}")
+                    put("ch_id", channel.id.toString())
+                    put("name", "${channel.name}: part ${(slot + i) % PARTS + 1}")
+                    put("descr", "A test programme on ${channel.name}.")
+                    // Real portals send the times as strings.
+                    put("start_timestamp", start.toString())
+                    put("stop_timestamp", (start + SLOT_SECONDS).toString())
+                },
+            )
         }
     }
 
@@ -147,6 +172,11 @@ class MockPortal(
 
     companion object {
         const val PAGE_SIZE = 14
+        private const val FILLER_GENRE = "3"
+        private const val SLOT_SECONDS = 30L * 60
+        private const val MILLIS = 1000L
+        private const val PARTS = 12
+        private const val MAX_EPG_SIZE = 10
         const val DEFAULT_TOKEN_LIFETIME_MS = 60L * 60 * 1000
         private const val STATUS_NOT_REGISTERED = 2
         private const val WATCHDOG_SECONDS = 120

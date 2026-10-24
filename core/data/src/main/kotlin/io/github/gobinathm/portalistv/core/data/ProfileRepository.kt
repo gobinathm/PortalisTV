@@ -57,7 +57,11 @@ class LocalProfileRepository @Inject constructor(
         }
     }
 
-    override suspend fun delete(id: Long) = withContext(io) { dao.delete(id) }
+    override suspend fun delete(id: Long) = withContext(io) {
+        // The foreign key cascades too; this keeps it independent of SQLite's foreign key setting.
+        database.get().favoriteChannelDao().deleteAll(id)
+        dao.delete(id)
+    }
 
     /** Masks values without a recognizable shape (MAC addresses and tokens are caught by pattern). */
     private fun Profile.registerSecrets(): Profile = also {

@@ -6,6 +6,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
+import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
+import io.github.gobinathm.portalistv.feature.home.HomeActions
 import io.github.gobinathm.portalistv.feature.home.HomeScreen
 import io.github.gobinathm.portalistv.feature.home.HomeViewModel
 import io.github.gobinathm.portalistv.feature.live.LiveScreen
@@ -63,10 +65,19 @@ fun PortalisNavHost() {
         composable<HomeRoute> { entry ->
             val profileId = entry.toRoute<HomeRoute>().profileId
             HomeScreen(
-                onOpenCategory = { category -> navController.navigate(LiveRoute(profileId, category.id)) },
-                onPlayChannel = { channel ->
-                    navController.navigate(PlayerRoute(profileId, ALL_CATEGORIES, page = 1, channelId = channel.id))
-                },
+                HomeActions(
+                    onOpenCategory = { category -> navController.navigate(LiveRoute(profileId, category.id)) },
+                    onPlayFavorite = { channel ->
+                        navController.navigate(
+                            PlayerRoute(profileId, FAVORITES_CATEGORY, page = 1, channelId = channel.id),
+                        )
+                    },
+                    onPlayChannel = { channel, categoryId ->
+                        navController.navigate(PlayerRoute(profileId, categoryId, page = 1, channelId = channel.id))
+                    },
+                    onSwitchProfile = { navController.popBackStack() },
+                    onSettings = { navController.navigate(SettingsRoute) },
+                ),
             )
         }
         composable<LiveRoute> { entry ->

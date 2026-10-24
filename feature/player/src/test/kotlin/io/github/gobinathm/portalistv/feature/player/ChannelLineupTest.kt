@@ -63,19 +63,50 @@ class ChannelLineupTest {
     }
 
     @Test
+    fun `finds a channel by number in a few requests`() = runTest {
+        val big = PagedSource(total = 7000, pageSize = 14)
+        val lineup = ChannelLineup(big, "*")
+        lineup.load(1)
+        assertThat(lineup.findNumber(5321)?.id).isEqualTo("5321")
+        assertThat(big.loads.size).isAtMost(3)
+        assertThat(lineup.findNumber(2)?.id).isEqualTo("2")
+    }
+
+    @Test
+    fun `finds numbers that are not evenly spread`() = runTest {
+        // Every third number exists, as in a category cut out of the full list.
+        val sparse = PagedSource(total = 300, pageSize = 10, numberOf = { it * 3 })
+        val lineup = ChannelLineup(sparse, "1")
+        lineup.load(5)
+        assertThat(lineup.findNumber(600)?.number).isEqualTo(600)
+        assertThat(lineup.findNumber(3)?.number).isEqualTo(3)
+    }
+
+    @Test
+    fun `reports numbers that do not exist`() = runTest {
+        val sparse = PagedSource(total = 300, pageSize = 10, numberOf = { it * 3 })
+        val lineup = ChannelLineup(sparse, "1")
+        lineup.load(1)
+        assertThat(lineup.findNumber(301)).isNull()
+        assertThat(lineup.findNumber(5000)).isNull()
+        assertThat(sparse.loads.size).isAtMost(10)
+    }
+
+    @Test
     fun `formats playback time`() {
         assertThat(formatTime(65_000)).isEqualTo("1:05")
         assertThat(formatTime(3_725_000)).isEqualTo("1:02:05")
     }
 }
 
-private fun channel(id: Int, adult: Boolean = false) =
-    LiveChannel(id.toString(), "Channel $id", id, null, null, adult = adult, playbackRef = "$id")
+private fun channel(id: Int, adult: Boolean = false, number: Int = id) =
+    LiveChannel(id.toString(), "Channel $id", number, null, null, adult = adult, playbackRef = "$id")
 
 private class PagedSource(
     private val total: Int,
     private val pageSize: Int,
     private val adultIds: Set<Int> = emptySet(),
+    private val numberOf: (Int) -> Int = { it },
 ) : ContentSource {
     val loads = mutableListOf<Int>()
     override val playbackUserAgent: String? = null
@@ -87,7 +118,11 @@ private class PagedSource(
     override suspend fun liveChannels(categoryId: String, page: Int): PagedResult<LiveChannel> {
         loads += page
         val ids = (1..total).drop((page - 1) * pageSize).take(pageSize)
-        return PagedResult(ids.map { channel(it, it in adultIds) }, total, (total + pageSize - 1) / pageSize)
+        return PagedResult(
+            ids.map { channel(it, it in adultIds, numberOf(it)) },
+            total,
+            (total + pageSize - 1) / pageSize
+        )
     }
 
     override suspend fun streamUrl(channel: LiveChannel) = "http://streams.invalid/${channel.id}"

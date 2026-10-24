@@ -9,4 +9,6 @@ data class AppSettings(
     val pictureInPicture: Boolean = true,
     /** Show categories and channels the portal marks as adult. Off until the parental PIN exists (M7). */
     val showAdultContent: Boolean = false,
+    /** The profile opened at start when there are several; a single profile always opens. Null shows the list. */
+    val startProfileUuid: String? = null,
 )

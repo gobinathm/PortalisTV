@@ -10,15 +10,18 @@ data class MockGenre(val id: String, val title: String, val censored: Boolean = 
  * Big Buck Bunny is (c) Blender Foundation, CC BY 3.0; the Apple and Mux streams are public
  * HLS test streams. No third-party TV channel is referenced.
  */
-object Catalog {
-    private const val BIG_BUCK_BUNNY = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
-    private const val APPLE_BIPBOP =
-        "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8"
-    private const val APPLE_ADVANCED =
-        "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
-
-    /** Enough filler channels that lists span several pages. */
-    private const val FILLER_CHANNELS = 30
+class Catalog(
+    /** Filler channels after the test streams; the default spans several pages, more stress long lists. */
+    fillerChannels: Int = DEFAULT_FILLER_CHANNELS,
+) {
+    private companion object {
+        const val DEFAULT_FILLER_CHANNELS = 30
+        const val BIG_BUCK_BUNNY = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+        const val APPLE_BIPBOP =
+            "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8"
+        const val APPLE_ADVANCED =
+            "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
+    }
 
     val genres = listOf(
         MockGenre("1", "Test streams"),
@@ -31,9 +34,11 @@ object Catalog {
         add(MockChannel(1, "Apple Bip-Bop", "1", APPLE_BIPBOP))
         add(MockChannel(2, "Apple Advanced Stream", "1", APPLE_ADVANCED))
         add(MockChannel(3, "Big Buck Bunny", "2", BIG_BUCK_BUNNY))
-        repeat(FILLER_CHANNELS) { i ->
+        val digits = fillerChannels.toString().length.coerceAtLeast(2)
+        repeat(fillerChannels) { i ->
             val number = size + 1
-            add(MockChannel(number, "Filler %02d".format(i + 1), "3", if (i % 2 == 0) APPLE_BIPBOP else BIG_BUCK_BUNNY))
+            val stream = if (i % 2 == 0) APPLE_BIPBOP else BIG_BUCK_BUNNY
+            add(MockChannel(number, "Filler %0${digits}d".format(i + 1), "3", stream))
         }
     }
 }

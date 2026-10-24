@@ -3,29 +3,38 @@ package io.github.gobinathm.portalistv.feature.live
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gobinathm.portalistv.core.common.log.Log
+import io.github.gobinathm.portalistv.core.data.FavoritesRepository
 import io.github.gobinathm.portalistv.core.data.ProfileRepository
+import io.github.gobinathm.portalistv.core.data.image.ChannelLogos
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
 import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.ContentSource
+import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
+import io.github.gobinathm.portalistv.core.model.Programme
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import java.io.IOException
 import javax.inject.Inject
 
 data class LiveUiState(
     val profileName: String = "",
-    /** Starts with the all-channels entry (id [ALL_CATEGORIES]). */
+    /** Starts with the all-channels entry (id [ALL_CATEGORIES]), then favorites ([FAVORITES_CATEGORY]). */
     val categories: List<LiveCategory> = emptyList(),
     val selectedCategoryId: String = ALL_CATEGORIES,
     val pages: ChannelPages = ChannelPages(ALL_CATEGORIES),
@@ -33,6 +42,11 @@ data class LiveUiState(
     val loadingChannels: Boolean = false,
     /** The last portal request failed; [LiveViewModel.retry] repeats it. */
     val failed: Boolean = false,
+    val favoriteIds: Set<String> = emptySet(),
+    /** Guide entries per channel id, for the channels that have been on screen. */
+    val guide: Map<String, List<Programme>> = emptyMap(),
+    /** The clock the guide is shown against; ticks while the screen is open. */
+    val nowMillis: Long = 0,
 ) {
     val channels: List<LiveChannel> get() = pages.channels
     val totalChannels: Int get() = pages.totalItems
@@ -40,7 +54,8 @@ data class LiveUiState(
 
 /**
  * Live TV: the profile's categories and the selected category's channels, loaded page by page as
- * the list scrolls. Adult categories and channels are left out unless the settings allow them.
+ * the list scrolls, with now/next for the channels on screen. Favorites are a category of their
+ * own, kept on the device. Adult categories and channels are left out unless the settings allow them.
  */
 @HiltViewModel
 class LiveViewModel @Inject constructor(
@@ -48,19 +63,46 @@ class LiveViewModel @Inject constructor(
     private val repository: ProfileRepository,
     private val sources: ContentSources,
     private val settings: SettingsRepository,
+    private val favorites: FavoritesRepository,
+    private val logos: ChannelLogos,
 ) : ViewModel() {
     private val profileId: Long = savedStateHandle[ARG_PROFILE_ID] ?: 0L
     private val initialCategoryId: String = savedStateHandle[ARG_CATEGORY_ID] ?: ALL_CATEGORIES
 
-    private val _state = MutableStateFlow(LiveUiState(selectedCategoryId = initialCategoryId))
+    private val _state =
+        MutableStateFlow(LiveUiState(selectedCategoryId = initialCategoryId, nowMillis = System.currentTimeMillis()))
     val state: StateFlow<LiveUiState> = _state.asStateFlow()
+
+    private val _imageLoader = MutableStateFlow<ImageLoader?>(null)
+
+    /** Loads channel logos through the profile's connection settings; null until the profile is read. */
+    val imageLoader: StateFlow<ImageLoader?> = _imageLoader.asStateFlow()
 
     private var source: ContentSource? = null
     private var showAdult = false
     private var channelsJob: Job? = null
+    private var favoriteChannels: List<LiveChannel> = emptyList()
+
+    private val guide = GuideCache()
+    private val guideRequests = Semaphore(GUIDE_PARALLEL_REQUESTS)
+    private var visible = IntRange.EMPTY
 
     init {
         loadCategories()
+        viewModelScope.launch {
+            favorites.channels(profileId).collect { list ->
+                favoriteChannels = list
+                _state.update { it.copy(favoriteIds = list.mapTo(HashSet()) { channel -> channel.id }) }
+                if (_state.value.selectedCategoryId == FAVORITES_CATEGORY) showFavorites()
+            }
+        }
+        viewModelScope.launch {
+            while (isActive) {
+                delay(CLOCK_TICK_MS)
+                _state.update { it.copy(nowMillis = System.currentTimeMillis()) }
+                loadGuide()
+            }
+        }
     }
 
     fun retry() {
@@ -71,15 +113,23 @@ class LiveViewModel @Inject constructor(
         if (categoryId == _state.value.selectedCategoryId && channelsJob != null) return
         channelsJob?.cancel()
         channelsJob = null
+        visible = IntRange.EMPTY
         _state.update {
             it.copy(selectedCategoryId = categoryId, pages = ChannelPages(categoryId), loadingChannels = false)
         }
-        loadMore()
+        if (categoryId == FAVORITES_CATEGORY) showFavorites() else loadMore()
     }
 
-    /** Called with the last channel index on screen; loads the next page when it gets close. */
-    fun onScrolledTo(lastVisibleIndex: Int) {
-        if (_state.value.pages.needsMore(lastVisibleIndex)) loadMore()
+    /** Called with the channel indexes on screen: loads the next page when near the end, and their guide. */
+    fun onVisible(first: Int, last: Int) {
+        visible = first..last
+        if (_state.value.pages.needsMore(last)) loadMore()
+        loadGuide()
+    }
+
+    /** Adds the channel to favorites, or removes it. */
+    fun toggleFavorite(channel: LiveChannel) {
+        viewModelScope.launch { favorites.toggle(profileId, channel) }
     }
 
     /** The portal page [channel] came from, so the player zaps on from there. */
@@ -90,11 +140,13 @@ class LiveViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val profile = repository.get(profileId) ?: return@launch
+                _imageLoader.value = logos.loader(profile)
                 showAdult = settings.settings.first().showAdultContent
                 val contentSource = sources.forProfile(profile).also { source = it }
                 val categories = contentSource.liveCategories().filter { showAdult || !it.adult }
                 val all = categories.firstOrNull { it.id == ALL_CATEGORIES } ?: LiveCategory(ALL_CATEGORIES, "", false)
-                val list = listOf(all) + categories.filter { it.id != ALL_CATEGORIES }
+                val favoritesEntry = LiveCategory(FAVORITES_CATEGORY, "", adult = false)
+                val list = listOf(all, favoritesEntry) + categories.filter { it.id != ALL_CATEGORIES }
                 val selected = initialCategoryId.takeIf { id -> list.any { it.id == id } } ?: ALL_CATEGORIES
                 _state.update {
                     it.copy(profileName = profile.name, categories = list, loadingCategories = false)
@@ -107,6 +159,13 @@ class LiveViewModel @Inject constructor(
                 _state.update { it.copy(loadingCategories = false, failed = true) }
             }
         }
+    }
+
+    private fun showFavorites() {
+        val channels = favoriteChannels.filter { showAdult || !it.adult }
+        val pages = ChannelPages(FAVORITES_CATEGORY).append(1, channels, pageCount = 1, totalItems = channels.size)
+        _state.update { it.copy(pages = pages, loadingChannels = false, failed = false) }
+        loadGuide()
     }
 
     private fun loadMore() {
@@ -124,6 +183,7 @@ class LiveViewModel @Inject constructor(
                     _state.update { it.copy(pages = next) }
                 } while (next.channels.size == pages.channels.size && !next.complete)
                 _state.update { it.copy(loadingChannels = false) }
+                loadGuide()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: IOException) {
@@ -133,9 +193,40 @@ class LiveViewModel @Inject constructor(
         }
     }
 
+    /** Fetches now/next for the channels on screen (and a few beyond) that need it. */
+    private fun loadGuide() {
+        val contentSource = source ?: return
+        val channels = _state.value.channels
+        if (channels.isEmpty()) return
+        val range = if (visible.isEmpty()) 0..GUIDE_LOOKAHEAD else visible.first..visible.last + GUIDE_LOOKAHEAD
+        val now = System.currentTimeMillis()
+        channels.slice(range.first.coerceAtLeast(0)..range.last.coerceAtMost(channels.lastIndex))
+            .filter { guide.claim(it.id, now) }
+            .forEach { channel -> viewModelScope.launch { fetchGuide(contentSource, channel) } }
+    }
+
+    private suspend fun fetchGuide(contentSource: ContentSource, channel: LiveChannel) {
+        try {
+            val programmes = guideRequests.withPermit { contentSource.nowNext(channel) }
+            guide.store(channel.id, programmes, System.currentTimeMillis())
+        } catch (e: CancellationException) {
+            guide.release(channel.id)
+            throw e
+        } catch (e: IOException) {
+            Log.w(TAG, e) { "No guide for channel ${channel.id}" }
+            guide.failed(channel.id, System.currentTimeMillis())
+        }
+        _state.update { it.copy(guide = guide.snapshot()) }
+    }
+
     companion object {
         const val ARG_PROFILE_ID = "profileId"
         const val ARG_CATEGORY_ID = "categoryId"
         private const val TAG = "Live"
+        private const val GUIDE_PARALLEL_REQUESTS = 3
+
+        /** Channels below the visible ones whose guide is fetched too, so it's there when scrolled to. */
+        private const val GUIDE_LOOKAHEAD = 6
+        private const val CLOCK_TICK_MS = 30_000L
     }
 }

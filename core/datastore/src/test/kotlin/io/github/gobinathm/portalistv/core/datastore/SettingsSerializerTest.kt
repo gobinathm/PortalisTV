@@ -35,6 +35,7 @@ class SettingsSerializerTest {
             ),
             pictureInPicture = false,
             showAdultContent = true,
+            startProfileUuid = "6f1c1f0e-0000-4000-8000-000000000001",
         )
         assertThat(serializer.readFrom(ByteArrayInputStream(write(settings)))).isEqualTo(settings)
     }

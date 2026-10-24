@@ -13,6 +13,7 @@ Then add a profile with the URL `http://<your computer's IP>:8088/c/` (from the 
 Options:
 - `--mac 00:1A:79:00:00:01`: allow only this MAC address (repeatable); other devices are refused, as an unregistered box would be.
 - `--token-ttl 30`: tokens expire after 30 seconds, to exercise re-authentication.
+- `--filler 500`: how many filler channels to serve (default 30), for long lists such as the scroll benchmark's.
 
 ## Portal check (`tools/portal-check`)
 Connects to a portal with the app's own client and reports each step: connect, categories, channels and a stream link. Use it to check that your provider's portal works before trying the app, or to diagnose a failure.

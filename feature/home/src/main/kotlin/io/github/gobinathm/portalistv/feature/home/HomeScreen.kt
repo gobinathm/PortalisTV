@@ -2,47 +2,67 @@ package io.github.gobinathm.portalistv.feature.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
-import io.github.gobinathm.portalistv.core.designsystem.component.PosterCard
+import coil3.ImageLoader
+import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
+import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
+import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 
-/** The selected profile's home: connection status and a first look at its live TV. */
+private val StatusDotSize = 10.dp
+
+/** What the home screen can ask the app to do. */
+class HomeActions(
+    val onOpenCategory: (LiveCategory) -> Unit,
+    val onPlayFavorite: (LiveChannel) -> Unit,
+    /** A channel from the row under the categories: play it, zapping within [categoryId]. */
+    val onPlayChannel: (channel: LiveChannel, categoryId: String) -> Unit,
+    val onSwitchProfile: () -> Unit,
+    val onSettings: () -> Unit,
+)
+
+/** The selected profile's home: favorite channels, then live TV categories. */
 @Composable
-fun HomeScreen(
-    onOpenCategory: (LiveCategory) -> Unit,
-    onPlayChannel: (LiveChannel) -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = hiltViewModel(),
-) {
+fun HomeScreen(actions: HomeActions, modifier: Modifier = Modifier, viewModel: HomeViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val imageLoader by viewModel.imageLoader.collectAsStateWithLifecycle()
     HomeContent(
         state,
+        imageLoader,
+        actions,
         onRetry = viewModel::retry,
-        onOpenCategory = onOpenCategory,
-        onPlayChannel = onPlayChannel,
+        onCategoryFocused = viewModel::previewCategory,
         modifier = modifier,
     )
 }
@@ -50,57 +70,75 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     state: HomeUiState,
+    imageLoader: ImageLoader?,
+    actions: HomeActions,
     onRetry: () -> Unit,
-    onOpenCategory: (LiveCategory) -> Unit,
-    onPlayChannel: (LiveChannel) -> Unit,
+    onCategoryFocused: (LiveCategory) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val firstFocus = remember { FocusRequester() }
+    // Favorites take the first focus when there are any; otherwise the categories do.
+    val focusFavorites = state.error == null && state.favorites.isNotEmpty()
+    val focusCategories = state.error == null && state.favorites.isEmpty()
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .backdrop(MaterialTheme.colorScheme),
         contentPadding = PaddingValues(vertical = Spacing.screenVertical),
         verticalArrangement = Arrangement.spacedBy(Spacing.xl),
     ) {
-        item(key = "header") { Header(state, onRetry, firstFocus.takeIf { state.error != null }) }
+        item(key = "header") { Header(state, actions) }
+        if (state.error != null) {
+            item(key = "error") { ErrorPanel(state, onRetry, firstFocus) }
+        }
+        if (state.favorites.isNotEmpty()) {
+            item(key = "favorites") {
+                FavoritesRow(state.favorites, imageLoader, actions, firstFocus.takeIf { focusFavorites })
+            }
+        }
         if (state.categories.isNotEmpty()) {
             item(key = "categories") {
-                ContentRow(
-                    title = stringResource(R.string.home_row_categories, state.categories.size),
-                    items = state.categories,
-                    key = { it.id },
-                    label = LiveCategory::title,
-                    focus = firstFocus.takeIf { state.error == null },
-                    onClick = onOpenCategory,
-                )
+                CategoriesRow(state.categories, actions, firstFocus.takeIf { focusCategories }, onCategoryFocused)
             }
         }
-        if (state.channels.isNotEmpty()) {
-            item(key = "channels") {
-                ContentRow(
-                    title = stringResource(R.string.home_row_channels, state.totalChannels),
-                    items = state.channels,
-                    key = { it.id },
-                    label = { channel -> channel.number?.let { "$it  ${channel.name}" } ?: channel.name },
-                    focus = null,
-                    onClick = onPlayChannel,
-                )
-            }
+        state.preview?.takeIf { it.channels.isNotEmpty() }?.let { preview ->
+            item(key = "preview") { PreviewRow(preview, imageLoader, actions) }
         }
     }
-    LaunchedEffect(state.error != null, state.categories.isNotEmpty()) {
+    LaunchedEffect(state.error != null, state.favorites.isNotEmpty(), state.categories.isNotEmpty()) {
         runCatching { firstFocus.requestFocus() }
     }
 }
 
 @Composable
-private fun Header(state: HomeUiState, onRetry: () -> Unit, retryFocus: FocusRequester?) {
-    Column(
-        Modifier.padding(horizontal = Spacing.screenHorizontal),
-        verticalArrangement = Arrangement.spacedBy(Spacing.s),
+private fun Header(state: HomeUiState, actions: HomeActions) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.screenHorizontal),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(state.profileName, style = MaterialTheme.typography.displayMedium)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Text(state.profileName, style = MaterialTheme.typography.displayMedium, maxLines = 1)
+            ConnectionStatus(state)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+            OutlinedButton(onClick = actions.onSwitchProfile) { Text(stringResource(R.string.home_switch_profile)) }
+            OutlinedButton(onClick = actions.onSettings) { Text(stringResource(R.string.home_settings)) }
+        }
+    }
+}
+
+/** A small dot and a word: quiet when all is well, so the page stays about the content. */
+@Composable
+private fun ConnectionStatus(state: HomeUiState) {
+    val (color, text) = when {
+        state.error != null -> MaterialTheme.colorScheme.error to stringResource(R.string.home_status_offline)
+        state.connecting ->
+            MaterialTheme.colorScheme.onSurfaceVariant to stringResource(R.string.home_status_connecting)
+        else -> MaterialTheme.colorScheme.primary to stringResource(R.string.home_status_connected)
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+        Box(Modifier.size(StatusDotSize).background(color, CircleShape))
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (state.notSecure) {
             Text(
                 stringResource(R.string.home_not_secure),
@@ -108,62 +146,30 @@ private fun Header(state: HomeUiState, onRetry: () -> Unit, retryFocus: FocusReq
                 color = MaterialTheme.colorScheme.error,
             )
         }
-        val error = state.error
-        if (error != null) {
-            Text(stringResource(error.messageRes()), color = MaterialTheme.colorScheme.error)
-            state.portalMessage?.let { Text(stringResource(R.string.home_portal_says, it)) }
-            Button(
-                onClick = onRetry,
-                modifier = if (retryFocus != null) Modifier.focusRequester(retryFocus) else Modifier,
-            ) { Text(stringResource(R.string.home_retry)) }
-        } else {
-            Text(
-                stringResource(state.step.messageRes()),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        state.accountName?.let { Text(stringResource(R.string.home_account, it)) }
-        state.sampleStream?.let { Text(stringResource(R.string.home_stream_ok, it)) }
     }
 }
 
 @Composable
-private fun <T> ContentRow(
-    title: String,
-    items: List<T>,
-    key: (T) -> Any,
-    label: (T) -> String,
-    focus: FocusRequester?,
-    onClick: (T) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
-        Text(
-            title,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = Spacing.screenHorizontal),
-        )
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = Spacing.screenHorizontal),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.l),
-        ) {
-            items(items, key = key) { item ->
-                PosterCard(
-                    title = label(item),
-                    onClick = { onClick(item) },
-                    modifier = if (item == items.first() && focus != null) Modifier.focusRequester(focus) else Modifier,
-                )
-            }
+private fun ErrorPanel(state: HomeUiState, onRetry: () -> Unit, retryFocus: FocusRequester) {
+    val error = state.error ?: return
+    Column(
+        Modifier
+            .padding(horizontal = Spacing.screenHorizontal)
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(Radius.card))
+            .padding(Spacing.l),
+        verticalArrangement = Arrangement.spacedBy(Spacing.m),
+    ) {
+        Text(stringResource(error.messageRes()), style = MaterialTheme.typography.titleMedium)
+        state.portalMessage?.let {
+            Text(
+                stringResource(R.string.home_portal_says, it),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Button(onClick = onRetry, modifier = Modifier.focusRequester(retryFocus)) {
+            Text(stringResource(R.string.home_retry))
         }
     }
-}
-
-private fun ConnectionStep.messageRes() = when (this) {
-    ConnectionStep.CONNECTING -> R.string.home_step_connecting
-    ConnectionStep.LOADING_CATEGORIES -> R.string.home_step_categories
-    ConnectionStep.LOADING_CHANNELS -> R.string.home_step_channels
-    ConnectionStep.RESOLVING_STREAM -> R.string.home_step_stream
-    ConnectionStep.DONE -> R.string.home_step_done
 }
 
 private fun ConnectionError.messageRes() = when (this) {
@@ -185,14 +191,19 @@ private fun HomePreview() {
         HomeContent(
             HomeUiState(
                 profileName = "Living room",
-                step = ConnectionStep.DONE,
-                categories = listOf(LiveCategory("1", "News", adult = false)),
-                channels = listOf(LiveChannel("1", "Test Pattern", 1, null, "1", adult = false, playbackRef = "")),
-                totalChannels = 1,
+                connecting = false,
+                categories = listOf(
+                    LiveCategory(ALL_CATEGORIES, "", adult = false),
+                    LiveCategory("1", "News", adult = false),
+                    LiveCategory("2", "Kids", adult = false),
+                    LiveCategory("3", "Tamil", adult = false),
+                ),
+                favorites = listOf(LiveChannel("1", "Test Pattern", 1, null, "1", adult = false, playbackRef = "")),
             ),
+            imageLoader = null,
+            actions = HomeActions({}, {}, { _, _ -> }, {}, {}),
             onRetry = {},
-            onOpenCategory = {},
-            onPlayChannel = {},
+            onCategoryFocused = {},
         )
     }
 }

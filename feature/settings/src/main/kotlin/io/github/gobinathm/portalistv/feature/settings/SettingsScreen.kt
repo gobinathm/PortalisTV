@@ -1,6 +1,5 @@
 package io.github.gobinathm.portalistv.feature.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,6 +25,7 @@ import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
 import io.github.gobinathm.portalistv.core.designsystem.component.SectionHeader
 import io.github.gobinathm.portalistv.core.designsystem.component.SwitchRow
 import io.github.gobinathm.portalistv.core.designsystem.component.ValueRow
+import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.player.AspectMode
 import io.github.gobinathm.portalistv.core.player.Deinterlace
@@ -38,18 +38,25 @@ private enum class Picker { BUFFER, DECODING, DEINTERLACE, ASPECT, AUDIO_LANGUAG
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel()) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    settings?.let { SettingsContent(it, viewModel, modifier) }
+    val profiles by viewModel.profiles.collectAsStateWithLifecycle()
+    settings?.let { SettingsContent(it, profiles, viewModel, modifier) }
 }
 
 @Composable
-private fun SettingsContent(settings: AppSettings, viewModel: SettingsViewModel, modifier: Modifier) {
+private fun SettingsContent(
+    settings: AppSettings,
+    profiles: List<StartProfile>,
+    viewModel: SettingsViewModel,
+    modifier: Modifier,
+) {
     val player = settings.player
     var picker by remember { mutableStateOf<Picker?>(null) }
+    var pickingStartProfile by remember { mutableStateOf(false) }
     val firstRow = remember { FocusRequester() }
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .backdrop(MaterialTheme.colorScheme),
         contentPadding = PaddingValues(horizontal = Spacing.screenHorizontal, vertical = Spacing.screenVertical),
     ) {
         item { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.displayMedium) }
@@ -64,8 +71,23 @@ private fun SettingsContent(settings: AppSettings, viewModel: SettingsViewModel,
         playbackRows(player, firstRow, viewModel, onPick = { picker = it })
         backgroundRows(settings, viewModel)
         contentRows(settings, viewModel)
+        // With one profile there is nothing to choose: it always opens.
+        if (profiles.size > 1) startRows(settings, profiles, onPick = { pickingStartProfile = true })
     }
     LaunchedEffect(Unit) { runCatching { firstRow.requestFocus() } }
+    if (pickingStartProfile) {
+        ChoiceDialog(
+            title = stringResource(R.string.settings_start_profile),
+            options = listOf(ChoiceOption("", stringResource(R.string.settings_start_profile_ask))) +
+                profiles.map { ChoiceOption(it.uuid, it.name) },
+            selectedKey = settings.startProfileUuid.orEmpty(),
+            onSelect = { key ->
+                viewModel.setStartProfile(key.ifEmpty { null })
+                pickingStartProfile = false
+            },
+            onDismiss = { pickingStartProfile = false },
+        )
+    }
     picker?.let { current ->
         SettingPicker(current, player, onUpdate = viewModel::updatePlayer, onDismiss = { picker = null })
     }
@@ -151,6 +173,18 @@ private fun LazyListScope.contentRows(settings: AppSettings, viewModel: Settings
             checked = settings.showAdultContent,
             onCheckedChange = viewModel::setShowAdultContent,
             hint = stringResource(R.string.settings_show_adult_hint),
+        )
+    }
+}
+
+private fun LazyListScope.startRows(settings: AppSettings, profiles: List<StartProfile>, onPick: () -> Unit) {
+    item { SectionHeader(stringResource(R.string.settings_section_start)) }
+    item {
+        ValueRow(
+            label = stringResource(R.string.settings_start_profile),
+            value = profiles.firstOrNull { it.uuid == settings.startProfileUuid }?.name
+                ?: stringResource(R.string.settings_start_profile_ask),
+            onClick = onPick,
         )
     }
 }

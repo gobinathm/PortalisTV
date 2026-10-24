@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Benchmark build type only, never distributed. The receiver is exported so the benchmark can
+     call it with "am broadcast"; profileable lets the benchmark trace frames of this release-like build. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
+        <receiver
+            android:name=".benchmark.SeedProfileReceiver"
+            android:exported="true"
+            tools:ignore="ExportedReceiver" />
+    </application>
+</manifest>

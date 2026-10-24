@@ -8,7 +8,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.github.gobinathm.portalistv.core.database.entity.toEntity
+import io.github.gobinathm.portalistv.core.database.entity.toFavoriteEntity
 import io.github.gobinathm.portalistv.core.database.entity.toModel
+import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.TestProfiles
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -67,6 +69,28 @@ class EncryptedDatabaseTest {
     }
 
     @Test
+    fun keepsFavoritesPerProfileInOrderAdded() = runTest {
+        open(key).useDb { db ->
+            val profileId = db.profileDao().insert(TestProfiles.minimal().toEntity())
+            val otherId = db.profileDao().insert(TestProfiles.full().toEntity())
+            val favorites = db.favoriteChannelDao()
+            favorites.insert(channel("2").toFavoriteEntity(profileId, addedAtMillis = 10))
+            favorites.insert(channel("1").toFavoriteEntity(profileId, addedAtMillis = 20))
+            favorites.insert(channel("9").toFavoriteEntity(otherId, addedAtMillis = 5))
+            // Adding again keeps the original position.
+            favorites.insert(channel("2").toFavoriteEntity(profileId, addedAtMillis = 30))
+
+            assertThat(favorites.getAll(profileId).map { it.channelId }).containsExactly("2", "1").inOrder()
+            assertThat(favorites.getAll(profileId).first().toModel()).isEqualTo(channel("2"))
+
+            favorites.delete(profileId, "2")
+            favorites.deleteAll(otherId)
+            assertThat(favorites.observe(profileId).first().map { it.channelId }).containsExactly("1")
+            assertThat(favorites.getAll(otherId)).isEmpty()
+        }
+    }
+
+    @Test
     fun rejectsDuplicateUuid() = runTest {
         open(key).useDb { db ->
             val dao = db.profileDao()
@@ -75,6 +99,9 @@ class EncryptedDatabaseTest {
             assertThat(duplicate.exceptionOrNull()).isInstanceOf(SQLiteConstraintException::class.java)
         }
     }
+
+    private fun channel(id: String) =
+        LiveChannel(id, "Channel $id", id.toInt(), "https://logos.invalid/$id.png", "3", false, "ffrt http://x/$id")
 
     @Test
     fun fileIsEncryptedOnDisk() = runTest {

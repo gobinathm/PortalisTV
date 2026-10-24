@@ -1,5 +1,7 @@
 package io.github.gobinathm.portalistv.feature.player
 
+import android.view.KeyEvent.KEYCODE_0
+import android.view.KeyEvent.KEYCODE_9
 import android.view.KeyEvent.KEYCODE_CHANNEL_DOWN
 import android.view.KeyEvent.KEYCODE_CHANNEL_UP
 import android.view.KeyEvent.KEYCODE_DPAD_CENTER
@@ -9,11 +11,15 @@ import android.view.KeyEvent.KEYCODE_DPAD_RIGHT
 import android.view.KeyEvent.KEYCODE_DPAD_UP
 import android.view.KeyEvent.KEYCODE_ENTER
 import android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+import android.view.KeyEvent.KEYCODE_NUMPAD_0
+import android.view.KeyEvent.KEYCODE_NUMPAD_9
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +45,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.player.PlaybackState
 import io.github.gobinathm.portalistv.core.player.Player
 import kotlinx.coroutines.delay
@@ -83,9 +90,7 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
     // Bumped on every key press so the overlay's hide timer restarts.
     var interaction by remember { mutableIntStateOf(0) }
     val rootFocus = remember { FocusRequester() }
-
-    KeepScreenOn()
-    BackgroundPlayback(onBackground = viewModel::onBackground, onForeground = viewModel::onForeground)
+    PlaybackLifecycle(viewModel)
     BackHandler(enabled = overlayVisible) { overlayVisible = false }
     // Composed later, so it wins while a panel is open.
     BackHandler(enabled = panel != null) {
@@ -115,15 +120,17 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
             .background(Color.Black)
             .onPreviewKeyEvent { event ->
                 interaction++
-                if (overlayVisible || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                handleKey(event.key.nativeKeyCode, playback, player, viewModel) { overlayVisible = true }
+                event.type == KeyEventType.KeyDown &&
+                    viewModel.handleKey(event.key.nativeKeyCode, overlayVisible, playback, player) {
+                        overlayVisible = true
+                    }
             }
             .focusRequester(rootFocus)
             .focusable(),
     ) {
         player.VideoSurface(Modifier.fillMaxSize())
         // The small window shows only the picture.
-        if (!inPip) PlaybackStatus(ui, playback, Modifier.align(Alignment.Center))
+        if (!inPip) StatusLayer(ui, playback)
         val openPanel = panel
         when {
             inPip -> Unit
@@ -140,8 +147,51 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
     }
 }
 
+/** Keeps the screen on, and stops and resumes playback as the app leaves and returns. */
+@Composable
+private fun PlaybackLifecycle(viewModel: PlayerViewModel) {
+    KeepScreenOn()
+    BackgroundPlayback(onBackground = viewModel::onBackground, onForeground = viewModel::onForeground)
+}
+
+/** Messages over the picture: loading and errors in the middle, a typed channel number at the top. */
+@Composable
+private fun BoxScope.StatusLayer(ui: PlayerUiState, playback: PlaybackState) {
+    PlaybackStatus(ui, playback, Modifier.align(Alignment.Center))
+    NumberEntry(ui, Modifier.align(Alignment.TopEnd).padding(Spacing.screenHorizontal))
+}
+
+/** The digit a number key stands for, from the remote's or a keyboard's number row or keypad. */
+private fun digitOf(code: Int): Int? = when (code) {
+    in KEYCODE_0..KEYCODE_9 -> code - KEYCODE_0
+    in KEYCODE_NUMPAD_0..KEYCODE_NUMPAD_9 -> code - KEYCODE_NUMPAD_0
+    else -> null
+}
+
+/**
+ * Keys on the playback screen. Number keys always pick a channel; the rest act only while the
+ * controls are hidden. Returns true when the key was used.
+ */
+private fun PlayerViewModel.handleKey(
+    code: Int,
+    overlayVisible: Boolean,
+    playback: PlaybackState,
+    player: Player,
+    showOverlay: () -> Unit,
+): Boolean {
+    val digit = digitOf(code)
+    return when {
+        digit != null -> {
+            typeDigit(digit)
+            true
+        }
+        overlayVisible -> false
+        else -> handleControlKey(code, playback, player, this, showOverlay)
+    }
+}
+
 /** Keys while the controls are hidden. Returns true when the key was used. */
-private fun handleKey(
+private fun handleControlKey(
     code: Int,
     playback: PlaybackState,
     player: Player,
