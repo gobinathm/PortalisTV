@@ -45,7 +45,9 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [x] Security self-audit (OWASP MASVS L1): [SECURITY_AUDIT.md](SECURITY_AUDIT.md)
 - [x] License audit, complete [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)
 - [x] In-app About screen: version, privacy summary, third-party notices
-- [ ] Install guide verified on real TVs; v1.0.0 tag
+- [x] Install guide followed from a clean clone on macOS, installed on a Google TV Streamer
+- [ ] Install guide on an older Android TV box; release build on Linux and Windows
+- [ ] v1.0.0 tag
 
 ## Later (TODO)
 - [ ] **Signed release APKs** on GitHub Releases: per-ABI APKs, SHA-256 checksums, build attestations, published signing-certificate fingerprint, Obtainium support. Requires developer registration where Android developer verification is enforced.

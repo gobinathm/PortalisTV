@@ -50,8 +50,10 @@ If the file names end in `-unsigned.apk` instead, the signing key is missing: ru
 ```sh
 # On the TV: Wireless debugging → "Pair device with pairing code"
 adb pair <tv-ip>:<pairing-port>      # enter the 6-digit code shown on the TV
-adb connect <tv-ip>:<port>           # port shown on the Wireless debugging screen
+adb devices                          # newer TVs often connect by themselves after pairing
+adb connect <tv-ip>:<port>           # only if the TV isn't listed; port shown on the Wireless debugging screen
 ```
+Pairing is needed once per computer. Later, `adb connect` is enough, and the port changes whenever the TV restarts; `adb mdns services` shows the current one.
 **Older Android TV (network debugging):**
 ```sh
 adb connect <tv-ip>:5555             # accept the prompt on the TV
@@ -93,6 +95,7 @@ This folder is deleted when the app is uninstalled, so copy backups off the TV b
 | `Unable to locate a Java Runtime` / `keytool: command not found` | The JDK is not on your `PATH`; see step 1.1 |
 | `Failed to find target with hash string 'android-37'` | Run `sdkmanager "platforms;android-37.0" "build-tools;37.0.0"` |
 | `adb connect` fails | TV and computer must be on the same network; re-check the IP and port; re-enable debugging |
+| `adb: more than one device/emulator` | The TV is connected twice (e.g. automatically and with `adb connect`). Run `adb devices`, then `adb disconnect <tv-ip>:<port>` for the extra entry |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | The installed build was signed with a different key. Export a backup, uninstall, then install. |
 | `INSTALL_FAILED_NO_MATCHING_ABIS` | Your TV's CPU isn't supported by this build; open an issue with `adb shell getprop ro.product.cpu.abilist` |
 | App not on the home screen | Look under **Apps → See all apps** |
