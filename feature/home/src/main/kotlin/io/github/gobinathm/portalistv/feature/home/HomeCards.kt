@@ -1,6 +1,8 @@
 package io.github.gobinathm.portalistv.feature.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -9,6 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -22,6 +26,7 @@ import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryMark
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryMarkView
 import io.github.gobinathm.portalistv.core.designsystem.component.ChannelLogo
+import io.github.gobinathm.portalistv.core.designsystem.component.artwork
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
 import io.github.gobinathm.portalistv.core.designsystem.theme.Focus
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
@@ -33,6 +38,9 @@ private val CardSize = DpSize(208.dp, 136.dp)
 private val LogoSize = DpSize(120.dp, 64.dp)
 private val CategoryIconSize = 48.dp
 
+/** The number badge's backing on a title card. */
+private const val BADGE_ALPHA = 0.35f
+
 @Composable
 internal fun ChannelCard(
     channel: LiveChannel,
@@ -41,14 +49,49 @@ internal fun ChannelCard(
     onLongClick: () -> Unit,
     modifier: Modifier,
 ) {
+    if (channel.logoUrl == null || imageLoader == null) {
+        ChannelTitleCard(channel, onClick, onLongClick, modifier)
+        return
+    }
     HomeCard(onClick, modifier, onLongClick) {
-        ChannelLogo(channel.name, channel.logoUrl, imageLoader, size = LogoSize)
-        Text(
-            listOfNotNull(channel.number?.toString(), channel.name).joinToString("  "),
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        CenteredContent {
+            ChannelLogo(channel.name, channel.logoUrl, imageLoader, size = LogoSize)
+            Text(
+                listOfNotNull(channel.number?.toString(), channel.name).joinToString("  "),
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/** A channel without a logo: its name, large, on its own colour, with the number in a badge. */
+@Composable
+private fun ChannelTitleCard(channel: LiveChannel, onClick: () -> Unit, onLongClick: () -> Unit, modifier: Modifier) {
+    HomeCard(onClick, modifier, onLongClick) {
+        Box(Modifier.fillMaxSize().artwork(channel.name).padding(Spacing.m)) {
+            channel.number?.let { number ->
+                Text(
+                    number.toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .background(Color.Black.copy(alpha = BADGE_ALPHA), RoundedCornerShape(Spacing.xs))
+                        .padding(horizontal = Spacing.s, vertical = 2.dp),
+                )
+            }
+            Text(
+                channel.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.BottomStart),
+            )
+        }
     }
 }
 
@@ -66,12 +109,23 @@ internal fun CategoryCard(category: LiveCategory, onClick: () -> Unit, modifier:
 @Composable
 internal fun IconCard(label: String, mark: CategoryMark, onClick: () -> Unit, modifier: Modifier) {
     HomeCard(onClick, modifier) {
-        CategoryMarkView(mark, size = CategoryIconSize)
-        Text(label, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        CenteredContent {
+            CategoryMarkView(mark, size = CategoryIconSize)
+            Text(label, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
     }
 }
 
-/** A focusable card with centered content that scales and glows in the accent color when focused. */
+@Composable
+private fun CenteredContent(content: @Composable () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(Spacing.m),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.s, Alignment.CenterVertically),
+    ) { content() }
+}
+
+/** A focusable card that scales and glows in the accent color when focused. */
 @Composable
 private fun HomeCard(
     onClick: () -> Unit,
@@ -89,11 +143,5 @@ private fun HomeCard(
         glow = CardDefaults.glow(
             focusedGlow = Glow(elevationColor = MaterialTheme.colorScheme.primary, elevation = 16.dp),
         ),
-    ) {
-        Column(
-            Modifier.fillMaxSize().padding(Spacing.m),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Spacing.s, Alignment.CenterVertically),
-        ) { content() }
-    }
+    ) { content() }
 }

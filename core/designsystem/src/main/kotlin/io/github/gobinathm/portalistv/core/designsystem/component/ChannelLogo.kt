@@ -13,7 +13,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
@@ -25,7 +27,8 @@ import coil3.compose.AsyncImage
 private const val PLATE_ALPHA = 0.92f
 
 /**
- * A channel's logo on a rounded plate, or its initials when there is no logo (or it can't load).
+ * A channel's logo on a rounded plate, or its initials on its own colour when there is no logo
+ * (or it can't load).
  * [imageLoader] decides how the logo is fetched; logos are never fetched without one.
  */
 @Composable
@@ -40,13 +43,14 @@ fun ChannelLogo(
         modifier
             .size(size)
             .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .artwork(name),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            name.split(' ').filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }.uppercase(),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            initialsOf(name),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
         )
         if (logoUrl != null && imageLoader != null) {
             // The plate goes in only once the logo is there, so the initials show while loading or on failure.

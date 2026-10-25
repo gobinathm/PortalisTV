@@ -62,7 +62,8 @@ fun PosterImageCard(
             focusedGlow = Glow(elevationColor = MaterialTheme.colorScheme.primary, elevation = 16.dp),
         ),
     ) {
-        Box(Modifier.fillMaxSize()) {
+        // The title's colour shows until the image loads, and stays if there is none or it fails.
+        Box(Modifier.fillMaxSize().artwork(title)) {
             if (imageUrl != null && imageLoader != null) {
                 AsyncImage(
                     model = imageUrl,
