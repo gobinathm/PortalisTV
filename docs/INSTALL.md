@@ -88,6 +88,21 @@ adb push portalis-profiles-….ptvb /sdcard/Android/data/io.github.gobinathm.por
 ```
 This folder is deleted when the app is uninstalled, so copy backups off the TV before uninstalling. Debug builds use `io.github.gobinathm.portalistv.debug` in the path.
 
+## 8. Channel logos for your build (optional)
+Many portals send no channel logos, so the app shows each channel's name on a colour instead. You can pack real logos into **your own** build: a tool on your computer reads your channel list, looks each channel up by name in the public [iptv-org](https://github.com/iptv-org/database) database, and writes small PNGs to `local-logos/`. The next build includes them; the TV still talks only to your portal.
+
+1. Copy `portal-check.properties.example` to `portal-check.properties` and fill in your portal address and MAC (the file is git-ignored).
+2. Make the logos (this takes a few minutes the first time):
+   ```sh
+   ./gradlew :tools:logo-pack:run
+   # or only some categories, by words in their names:
+   ./gradlew :tools:logo-pack:run --args="--only=HINDI,TAMIL"
+   ```
+   It prints how many channels matched and the size; `build/logo-pack/report.tsv` lists what each channel matched.
+3. Build and install as usual (step 4). To build **without** the logos, add `-Pportalis.logos=false` (or put `portalis.logos=false` in `gradle.properties`), or delete `local-logos/`.
+
+Run it again when your provider adds channels. Matching is by name, so some channels won't get a logo, and occasionally one gets a wrong one. `local-logos/` is git-ignored: logos are their owners' trademarks, so never commit or share them.
+
 ## Troubleshooting
 | Problem | Fix |
 |---|---|

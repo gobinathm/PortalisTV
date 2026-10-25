@@ -4,6 +4,7 @@ import io.github.gobinathm.portalistv.core.model.ContentSource
 import io.github.gobinathm.portalistv.core.model.Episode
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
+import io.github.gobinathm.portalistv.core.model.LogoPack
 import io.github.gobinathm.portalistv.core.model.PagedResult
 import io.github.gobinathm.portalistv.core.model.Programme
 import io.github.gobinathm.portalistv.core.model.Season
@@ -28,11 +29,12 @@ import io.github.gobinathm.portalistv.core.stalker.vodLink
 import io.github.gobinathm.portalistv.core.stalker.vodPage
 import io.github.gobinathm.portalistv.core.stalker.VodItem as PortalVodItem
 
-/** [ContentSource] for Stalker/Ministra portals. */
+/** [ContentSource] for Stalker/Ministra portals. Channels without a logo get one from [logos] if it has one. */
 @Suppress("TooManyFunctions") // One override per ContentSource call.
 internal class StalkerContentSource(
     private val client: StalkerClient,
     override val playbackUserAgent: String?,
+    private val logos: BundledLogos,
 ) : ContentSource {
     override suspend fun connect(): SourceAccount = mapErrors {
         client.connect().let { SourceAccount(displayName = it.name, message = it.message) }
@@ -44,7 +46,8 @@ internal class StalkerContentSource(
 
     override suspend fun liveChannels(categoryId: String, page: Int): PagedResult<LiveChannel> = mapErrors {
         val result = client.channels(categoryId, page)
-        PagedResult(result.items.map { it.toLive() }, result.totalItems, result.pageCount)
+        val bundled = logos.index()
+        PagedResult(result.items.map { it.toLive(bundled) }, result.totalItems, result.pageCount)
     }
 
     override suspend fun nowNext(channel: LiveChannel): List<Programme> = programmes(channel, size = 2)
@@ -127,11 +130,11 @@ internal class StalkerContentSource(
         playbackRef = cmd,
     )
 
-    private fun Channel.toLive() = LiveChannel(
+    private fun Channel.toLive(bundledLogos: Map<String, String>) = LiveChannel(
         id = id,
         name = name,
         number = number,
-        logoUrl = logoUrl,
+        logoUrl = logoUrl ?: bundledLogos[LogoPack.key(name)],
         categoryId = genreId,
         adult = censored,
         playbackRef = cmd,

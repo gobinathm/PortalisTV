@@ -15,6 +15,7 @@ class ContentSources @Inject constructor(
     private val httpClients: HttpClients,
     private val portalConfig: PortalConfig,
     private val recorder: ExchangeRecorder,
+    private val logos: BundledLogos,
 ) {
     private val sources = mutableMapOf<Long, Pair<Profile, ContentSource>>()
 
@@ -26,6 +27,7 @@ class ContentSources @Inject constructor(
         val http = httpClients.forProfile(portalConfig.proxy(profile))
         val config = portalConfig.stalkerConfig(profile)
         val client = mapErrors { StalkerClient(http, config, recorder = recorder) }
-        return StalkerContentSource(client, config.identity.userAgent).also { sources[profile.id] = profile to it }
+        val source = StalkerContentSource(client, config.identity.userAgent, logos)
+        return source.also { sources[profile.id] = profile to it }
     }
 }

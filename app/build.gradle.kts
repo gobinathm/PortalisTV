@@ -12,6 +12,12 @@ val keystoreProperties = rootProject.file("keystore.properties").takeIf { it.exi
     Properties().apply { file.inputStream().use(::load) }
 }
 
+// Channel logos made on this computer by tools/logo-pack (git-ignored, never committed). They go into
+// the app when the folder exists; build with -Pportalis.logos=false to leave them out.
+val logoPack = rootProject.file("local-logos").takeIf {
+    it.isDirectory && providers.gradleProperty("portalis.logos").orNull != "false"
+}
+
 android {
     namespace = "io.github.gobinathm.portalistv"
 
@@ -72,6 +78,7 @@ android {
     sourceSets {
         // Benchmark builds behave like release builds, e.g. they never record portal traffic.
         getByName("benchmark").kotlin.directories += "src/release/kotlin"
+        logoPack?.let { getByName("main").assets.directories += it.path }
     }
 
     buildFeatures {

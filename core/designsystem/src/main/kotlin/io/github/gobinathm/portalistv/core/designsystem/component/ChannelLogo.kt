@@ -22,8 +22,9 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
+import io.github.gobinathm.portalistv.core.model.LogoPack
 
-/** Logos are drawn on a light plate: most are made for white backgrounds. */
+/** Logos are drawn on a light plate: most are made for white backgrounds. Packed light ones ([LogoPack]) aren't. */
 private const val PLATE_ALPHA = 0.92f
 
 /**
@@ -55,6 +56,7 @@ fun ChannelLogo(
         if (logoUrl != null && imageLoader != null) {
             // The plate goes in only once the logo is there, so the initials show while loading or on failure.
             var loaded by remember(logoUrl) { mutableStateOf(false) }
+            val plate = !logoUrl.endsWith(LogoPack.LIGHT_SUFFIX)
             AsyncImage(
                 model = logoUrl,
                 contentDescription = null,
@@ -65,7 +67,7 @@ fun ChannelLogo(
                 modifier = Modifier
                     .matchParentSize()
                     .then(
-                        if (loaded) {
+                        if (loaded && plate) {
                             Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = PLATE_ALPHA))
                         } else {
                             Modifier

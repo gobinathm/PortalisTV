@@ -18,6 +18,8 @@ keystore.properties
 *.pem
 secrets/
 portal-check.properties
+# Channel logos made by tools/logo-pack for your own build: trademarks of their owners
+local-logos/
 
 # Third-party binaries and reverse-engineering material must never enter this repo
 decompiled/

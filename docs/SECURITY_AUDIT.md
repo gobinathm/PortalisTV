@@ -38,7 +38,7 @@ _Audit of commit `57997b7`, October 2026, before v1.0. This is a self-audit by t
 ### MASVS-PLATFORM — pass, with two accepted items
 - Only the launcher activity is exported by the app's own code, and it has no VIEW or deep-link intent filters. The merged release manifest also has AndroidX's startup provider and Room's invalidation service, both not exported, and AndroidX's `ProfileInstallReceiver`. That receiver is exported but guarded by `android.permission.DUMP`, which only the system and ADB shell hold.
 - No WebView and no JavaScript bridge.
-- Values from the portal are validated where they enter. Stream URLs must use `http`, `https`, `rtsp`, `rtp` or `udp` (`StreamUrls`), so never `file:`, `content:` or `javascript:`. Logo and poster URLs are parsed with OkHttp's `toHttpUrlOrNull`, which accepts only `http` and `https`.
+- Values from the portal are validated where they enter. Stream URLs must use `http`, `https`, `rtsp`, `rtp` or `udp` (`StreamUrls`), so never `file:`, `content:` or `javascript:`. Logo and poster URLs are parsed with OkHttp's `toHttpUrlOrNull`, which accepts only `http` and `https`. The only other image addresses are logos packed into a build by `tools/logo-pack` (`file:///android_asset/logos/…`), made by the app itself and loaded from its own APK.
 - Imports and exports use the Storage Access Framework. The app requests no storage permissions.
 - **L2 (accepted):** "Open in external player" passes the stream URL, which can contain a session token, to the app the user picks. This happens only when the user asks for it.
 - **L3 (accepted):** PIN and password screens don't set `FLAG_SECURE`. On a TV, screenshots and screen sharing are rare and need ADB or a paired device, and the PIN dialog doesn't show the digits.
