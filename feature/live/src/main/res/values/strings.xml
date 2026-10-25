@@ -19,4 +19,6 @@
     <!-- %1$s is a category name. -->
     <string name="guide_title">%1$s · Guide</string>
     <string name="guide_no_info">No information</string>
+    <!-- Start time, end time, programme title, e.g. "19:00 – 20:30  The News" -->
+    <string name="guide_programme_heading">%1$s – %2$s  %3$s</string>
 </resources>

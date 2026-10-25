@@ -17,8 +17,12 @@ class GuideLayoutTest {
     }
 
     @Test
-    fun `a channel without a guide is one empty block`() {
-        assertThat(guideBlocks(emptyList(), 0, 60 * minute)).containsExactly(GuideBlock(null, 0, 60 * minute))
+    fun `a channel without a guide is empty half hours`() {
+        assertThat(guideBlocks(emptyList(), 10 * minute, 70 * minute)).containsExactly(
+            GuideBlock(null, 10 * minute, 30 * minute),
+            GuideBlock(null, 30 * minute, 60 * minute),
+            GuideBlock(null, 60 * minute, 70 * minute),
+        ).inOrder()
     }
 
     @Test
@@ -37,6 +41,13 @@ class GuideLayoutTest {
         assertThat(windowFor(later, start, earliest = start)).isEqualTo(750 * minute)
         val earlier = GuideBlock(null, 500 * minute, 520 * minute)
         assertThat(windowFor(earlier, 700 * minute, earliest = start)).isEqualTo(start)
+    }
+
+    @Test
+    fun `moves back to a programme that shows only a few minutes at the left edge`() {
+        val start = 600 * minute
+        val endingSoon = GuideBlock(show(570, 605), 570 * minute, 605 * minute)
+        assertThat(windowFor(endingSoon, start, earliest = 540 * minute)).isEqualTo(570 * minute)
     }
 
     @Test
