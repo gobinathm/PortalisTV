@@ -16,6 +16,9 @@ interface FavoriteChannelDao {
     @Query("SELECT * FROM favorite_channels WHERE profile_id = :profileId ORDER BY added_at, channel_id")
     suspend fun getAll(profileId: Long): List<FavoriteChannelEntity>
 
+    @Query("UPDATE favorite_channels SET on_home = :onHome WHERE profile_id = :profileId AND channel_id = :channelId")
+    suspend fun setOnHome(profileId: Long, channelId: String, onHome: Boolean)
+
     /** Keeps the original position when a favorite is added again. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(favorite: FavoriteChannelEntity)

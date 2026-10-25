@@ -37,6 +37,8 @@ import androidx.tv.material3.Text
 import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.data.PinResult
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryRail
+import io.github.gobinathm.portalistv.core.designsystem.component.FavoriteAction
+import io.github.gobinathm.portalistv.core.designsystem.component.FavoriteMenu
 import io.github.gobinathm.portalistv.core.designsystem.component.PinDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.component.groupOf
@@ -70,6 +72,8 @@ fun LiveScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val imageLoader by viewModel.imageLoader.collectAsStateWithLifecycle()
+    // Hold OK adds a channel to favorites at once; on a favorite it opens its menu.
+    var favoriteMenu by remember { mutableStateOf<LiveChannel?>(null) }
     LiveContent(
         state = state,
         imageLoader = imageLoader,
@@ -79,11 +83,29 @@ fun LiveScreen(
             onVisible = viewModel::onVisible,
             onRetry = viewModel::retry,
             onPlay = { channel -> onPlay(channel, state.selectedCategoryId, viewModel.pageOf(channel)) },
-            onToggleFavorite = viewModel::toggleFavorite,
+            onHoldChannel = { channel ->
+                if (channel.id in state.favoriteIds) {
+                    favoriteMenu = channel
+                } else {
+                    viewModel.onFavoriteAction(channel, FavoriteAction.ADD)
+                }
+            },
             onOpenGuide = { onOpenGuide(state.selectedCategoryId) },
         ),
         modifier = modifier,
     )
+    favoriteMenu?.let { channel ->
+        FavoriteMenu(
+            channel = channel,
+            isFavorite = channel.id in state.favoriteIds,
+            onHome = channel.id in state.homeIds,
+            onAction = { action ->
+                viewModel.onFavoriteAction(channel, action)
+                favoriteMenu = null
+            },
+            onDismiss = { favoriteMenu = null },
+        )
+    }
     if (state.pinFor != null) {
         val paused = pausedMessage()
         PinDialog(
@@ -106,7 +128,7 @@ private class LiveActions(
     val onVisible: (first: Int, last: Int) -> Unit,
     val onRetry: () -> Unit,
     val onPlay: (LiveChannel) -> Unit,
-    val onToggleFavorite: (LiveChannel) -> Unit,
+    val onHoldChannel: (LiveChannel) -> Unit,
     val onOpenGuide: () -> Unit,
 )
 
@@ -222,7 +244,7 @@ private fun ChannelList(state: LiveUiState, imageLoader: ImageLoader?, actions: 
                 imageLoader = imageLoader,
                 timeFormat = timeFormat,
                 onClick = { actions.onPlay(channel) },
-                onLongClick = { actions.onToggleFavorite(channel) },
+                onLongClick = { actions.onHoldChannel(channel) },
             )
         }
         if (state.failed) {

@@ -6,4 +6,9 @@
         <item quantity="one">Too many tries. Try again in %1$d second.</item>
         <item quantity="other">Too many tries. Try again in %1$d seconds.</item>
     </plurals>
+
+    <string name="favorite_add">Add to favorites</string>
+    <string name="favorite_show_on_home">Show on Home</string>
+    <string name="favorite_hide_from_home">Hide from Home</string>
+    <string name="favorite_remove">Remove from favorites</string>
 </resources>

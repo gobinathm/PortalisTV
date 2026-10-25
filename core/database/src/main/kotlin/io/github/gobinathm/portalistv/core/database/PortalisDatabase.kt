@@ -17,13 +17,17 @@ import io.github.gobinathm.portalistv.core.database.entity.WatchProgressEntity
  * [Migrations]), checked by `MigrationTest`; destructive fallback is never enabled, because the
  * database holds the user's profiles.
  *
- * Versions: 1 profiles; 2 favorite channels; 3 watch progress.
+ * Versions: 1 profiles; 2 favorite channels; 3 watch progress; 4 favorites shown on Home.
  */
 @Database(
     entities = [ProfileEntity::class, FavoriteChannelEntity::class, WatchProgressEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3),
+        AutoMigration(from = 3, to = 4),
+    ],
 )
 abstract class PortalisDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao

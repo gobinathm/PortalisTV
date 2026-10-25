@@ -9,7 +9,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -27,7 +26,6 @@ import io.github.gobinathm.portalistv.core.designsystem.component.mark
 import io.github.gobinathm.portalistv.core.designsystem.theme.Focus
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
-import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 
@@ -36,8 +34,14 @@ private val LogoSize = DpSize(120.dp, 64.dp)
 private val CategoryIconSize = 48.dp
 
 @Composable
-internal fun ChannelCard(channel: LiveChannel, imageLoader: ImageLoader?, onClick: () -> Unit, modifier: Modifier) {
-    HomeCard(onClick, modifier) {
+internal fun ChannelCard(
+    channel: LiveChannel,
+    imageLoader: ImageLoader?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier,
+) {
+    HomeCard(onClick, modifier, onLongClick) {
         ChannelLogo(channel.name, channel.logoUrl, imageLoader, size = LogoSize)
         Text(
             listOfNotNull(channel.number?.toString(), channel.name).joinToString("  "),
@@ -51,7 +55,7 @@ internal fun ChannelCard(channel: LiveChannel, imageLoader: ImageLoader?, onClic
 @Composable
 internal fun CategoryCard(category: LiveCategory, onClick: () -> Unit, modifier: Modifier) {
     IconCard(
-        label = if (category.id == ALL_CATEGORIES) stringResource(R.string.home_all_channels) else category.title,
+        label = categoryLabel(category),
         mark = category.mark(),
         onClick = onClick,
         modifier = modifier,
@@ -69,9 +73,15 @@ internal fun IconCard(label: String, mark: CategoryMark, onClick: () -> Unit, mo
 
 /** A focusable card with centered content that scales and glows in the accent color when focused. */
 @Composable
-private fun HomeCard(onClick: () -> Unit, modifier: Modifier, content: @Composable () -> Unit) {
+private fun HomeCard(
+    onClick: () -> Unit,
+    modifier: Modifier,
+    onLongClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit,
+) {
     Card(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier.size(CardSize),
         shape = CardDefaults.shape(RoundedCornerShape(Radius.card)),
         scale = CardDefaults.scale(focusedScale = Focus.CARD_SCALE),

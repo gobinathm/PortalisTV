@@ -76,3 +76,23 @@ fun ChoiceDialog(
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
 }
+
+/** A short menu of [actions] for [title]; the first has focus. Back closes it. */
+@Composable
+fun ActionDialog(title: String, actions: List<ChoiceOption>, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+    val focus = remember { FocusRequester() }
+    DialogFrame(onDismiss) {
+        Text(title, style = MaterialTheme.typography.headlineMedium)
+        Column {
+            actions.forEachIndexed { index, action ->
+                ListItem(
+                    selected = false,
+                    onClick = { onSelect(action.key) },
+                    headlineContent = { Text(action.label) },
+                    modifier = if (index == 0) Modifier.focusRequester(focus) else Modifier,
+                )
+            }
+        }
+    }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+}

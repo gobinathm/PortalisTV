@@ -14,8 +14,10 @@ import io.github.gobinathm.portalistv.core.data.source.ContentSources
 import io.github.gobinathm.portalistv.core.data.usesPlainHttp
 import io.github.gobinathm.portalistv.core.datastore.HomeRow
 import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
+import io.github.gobinathm.portalistv.core.designsystem.component.FavoriteAction
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.ContentSource
+import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.SourceException
@@ -48,7 +50,10 @@ data class HomeUiState(
     val connecting: Boolean = true,
     /** Live TV categories, starting with all channels (id [ALL_CATEGORIES]). */
     val categories: List<LiveCategory> = emptyList(),
+    /** Every favorite channel, shown as a category after all channels. */
     val favorites: List<LiveChannel> = emptyList(),
+    /** The favorites chosen for the Favorites row. */
+    val homeFavorites: List<LiveChannel> = emptyList(),
     /** The first channels of the category last focused, shown under the categories. */
     val preview: CategoryPreview? = null,
     /** Movies and episodes started and not finished, most recent first. */
@@ -72,8 +77,8 @@ class HomeViewModel @Inject constructor(
     private val sources: ContentSources,
     private val settings: SettingsRepository,
     private val images: PortalImages,
-    favorites: FavoritesRepository,
-    watchProgress: WatchProgressRepository,
+    private val favorites: FavoritesRepository,
+    private val watchProgress: WatchProgressRepository,
 ) : ViewModel() {
     private val profileId: Long = savedStateHandle[PROFILE_ID_ARG] ?: 0L
 
@@ -94,7 +99,17 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val showAdult = settings.settings.first().showAdultContent
             favorites.channels(profileId).collect { list ->
-                _state.update { it.copy(favorites = list.filter { channel -> showAdult || !channel.adult }) }
+                val shown = list.filter { channel -> showAdult || !channel.adult }
+                _state.update { state ->
+                    val preview = state.preview?.takeIf { it.category.id == FAVORITES_CATEGORY }?.copy(channels = shown)
+                    state.copy(favorites = shown, preview = preview ?: state.preview)
+                }
+            }
+        }
+        viewModelScope.launch {
+            val showAdult = settings.settings.first().showAdultContent
+            favorites.homeChannels(profileId).collect { list ->
+                _state.update { it.copy(homeFavorites = list.filter { channel -> showAdult || !channel.adult }) }
             }
         }
         viewModelScope.launch {
@@ -160,9 +175,17 @@ class HomeViewModel @Inject constructor(
 
     /** Shows the first page of [category]'s channels under the categories. */
     fun previewCategory(category: LiveCategory) {
-        val contentSource = source ?: return
         if (_state.value.preview?.category?.id == category.id) return
         previewJob?.cancel()
+        if (category.id == FAVORITES_CATEGORY) {
+            _state.update { it.copy(preview = CategoryPreview(category, it.favorites)) }
+        } else {
+            previewPortalCategory(category)
+        }
+    }
+
+    private fun previewPortalCategory(category: LiveCategory) {
+        val contentSource = source ?: return
         previewJob = viewModelScope.launch {
             try {
                 val channels = contentSource.liveChannels(category.id, page = 1).items.filter { showAdult || !it.adult }
@@ -174,6 +197,23 @@ class HomeViewModel @Inject constructor(
                 Log.w(TAG, e) { "Channels of category ${category.id} could not be loaded" }
             }
         }
+    }
+
+    /** What was chosen in a channel's hold-OK menu. */
+    fun onFavoriteAction(channel: LiveChannel, action: FavoriteAction) {
+        viewModelScope.launch {
+            when (action) {
+                FavoriteAction.ADD -> favorites.add(profileId, channel)
+                FavoriteAction.SHOW_ON_HOME -> favorites.setOnHome(profileId, channel.id, onHome = true)
+                FavoriteAction.HIDE_FROM_HOME -> favorites.setOnHome(profileId, channel.id, onHome = false)
+                FavoriteAction.REMOVE -> favorites.remove(profileId, channel.id)
+            }
+        }
+    }
+
+    /** Takes a movie or series off Continue Watching; its saved position goes too. */
+    fun removeFromContinueWatching(progress: WatchProgress) {
+        viewModelScope.launch { watchProgress.forget(profileId, progress.playback.itemId) }
     }
 
     companion object {

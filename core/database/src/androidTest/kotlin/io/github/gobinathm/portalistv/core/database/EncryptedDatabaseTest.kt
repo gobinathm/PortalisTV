@@ -93,6 +93,23 @@ class EncryptedDatabaseTest {
     }
 
     @Test
+    fun favoritesStartOffHomeUntilShown() = runTest {
+        open(key).useDb { db ->
+            val profileId = db.profileDao().insert(TestProfiles.minimal().toEntity())
+            val favorites = db.favoriteChannelDao()
+            favorites.insert(channel("1").toFavoriteEntity(profileId, addedAtMillis = 10))
+            favorites.insert(channel("2").toFavoriteEntity(profileId, addedAtMillis = 20))
+            assertThat(favorites.getAll(profileId).map { it.onHome }).containsExactly(false, false)
+
+            favorites.setOnHome(profileId, "2", onHome = true)
+            assertThat(favorites.getAll(profileId).filter { it.onHome }.map { it.channelId }).containsExactly("2")
+            // Adding a favorite again leaves its Home choice alone.
+            favorites.insert(channel("2").toFavoriteEntity(profileId, addedAtMillis = 30))
+            assertThat(favorites.getAll(profileId).single { it.channelId == "2" }.onHome).isTrue()
+        }
+    }
+
+    @Test
     fun keepsWatchProgressPerEpisode() = runTest {
         open(key).useDb { db ->
             val profileId = db.profileDao().insert(TestProfiles.minimal().toEntity())

@@ -28,6 +28,7 @@ import io.github.gobinathm.portalistv.core.designsystem.component.markForName
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.CategoryNode
+import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.VodCategory
@@ -45,21 +46,27 @@ internal fun FavoritesRow(
     imageLoader: ImageLoader?,
     actions: HomeActions,
     focus: FocusRequester?,
+    onLongClick: (LiveChannel) -> Unit,
 ) {
     CardRow(stringResource(R.string.home_row_favorites), favorites, key = { it.id }) { index, channel ->
         ChannelCard(
             channel,
             imageLoader,
             onClick = { actions.onPlayFavorite(channel) },
+            onLongClick = { onLongClick(channel) },
             modifier = if (index == 0 && focus != null) Modifier.focusRequester(focus) else Modifier,
         )
     }
 }
 
-/** Live TV categories; the one focused fills the row below with its channels. */
+/**
+ * Live TV categories, with Favorites after all channels when there are any; the one focused fills
+ * the row below with its channels.
+ */
 @Composable
 internal fun CategoriesRow(
     categories: List<LiveCategory>,
+    hasFavorites: Boolean,
     actions: HomeActions,
     focus: FocusRequester?,
     onFocused: (LiveCategory) -> Unit,
@@ -71,7 +78,14 @@ internal fun CategoriesRow(
         onFocused(category)
     }
     // One card per group (e.g. all the Tamil categories), so the row stays short.
-    val nodes = remember(categories) { groupedWithAllFirst(categories) { it.title } }
+    val nodes = remember(categories, hasFavorites) {
+        val grouped = groupedWithAllFirst(categories) { it.title }
+        if (hasFavorites) {
+            grouped.take(1) + CategoryNode.Single(LiveCategory(FAVORITES_CATEGORY, "", adult = false)) + grouped.drop(1)
+        } else {
+            grouped
+        }
+    }
     val title = stringResource(R.string.home_row_live)
     CardRow(title, nodes, key = { it.key { category -> category.id } }) { index, node ->
         val first = node.first()
@@ -92,6 +106,7 @@ internal fun ContinueWatchingRow(
     imageLoader: ImageLoader?,
     actions: HomeActions,
     focus: FocusRequester?,
+    onLongClick: (WatchProgress) -> Unit,
 ) {
     CardRow(stringResource(R.string.home_row_continue), items, key = { it.playback.itemId }) { index, progress ->
         PosterImageCard(
@@ -99,6 +114,7 @@ internal fun ContinueWatchingRow(
             imageUrl = progress.posterUrl,
             imageLoader = imageLoader,
             onClick = { actions.onResume(progress) },
+            onLongClick = { onLongClick(progress) },
             modifier = if (index == 0 && focus != null) Modifier.focusRequester(focus) else Modifier,
             size = ContinuePoster,
             subtitle = progress.subtitle,
@@ -143,12 +159,18 @@ private fun <T> CategoryNode<T>.key(id: (T) -> String): String = when (this) {
 }
 
 @Composable
-internal fun PreviewRow(preview: CategoryPreview, imageLoader: ImageLoader?, actions: HomeActions) {
+internal fun PreviewRow(
+    preview: CategoryPreview,
+    imageLoader: ImageLoader?,
+    actions: HomeActions,
+    onLongClick: (LiveChannel) -> Unit,
+) {
     CardRow(categoryLabel(preview.category), preview.channels, key = { it.id }) { _, channel ->
         ChannelCard(
             channel,
             imageLoader,
             onClick = { actions.onPlayChannel(channel, preview.category.id) },
+            onLongClick = { onLongClick(channel) },
             modifier = Modifier,
         )
     }
@@ -177,5 +199,8 @@ private fun <T> CardRow(
 }
 
 @Composable
-internal fun categoryLabel(category: LiveCategory): String =
-    if (category.id == ALL_CATEGORIES) stringResource(R.string.home_all_channels) else category.title
+internal fun categoryLabel(category: LiveCategory): String = when (category.id) {
+    ALL_CATEGORIES -> stringResource(R.string.home_all_channels)
+    FAVORITES_CATEGORY -> stringResource(R.string.home_row_favorites)
+    else -> category.title
+}

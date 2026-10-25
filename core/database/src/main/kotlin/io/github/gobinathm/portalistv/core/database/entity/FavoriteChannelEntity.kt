@@ -8,7 +8,8 @@ import io.github.gobinathm.portalistv.core.model.LiveChannel
 
 /**
  * A live channel the user marked as a favorite, per profile. The whole channel is kept so the
- * favorites list opens and zaps without asking the portal for every category.
+ * favorites list opens and zaps without asking the portal for every category. [onHome] puts it in
+ * Home's Favorites row; new favorites start without it.
  */
 @Entity(
     tableName = "favorite_channels",
@@ -33,6 +34,7 @@ data class FavoriteChannelEntity(
     val adult: Boolean,
     @ColumnInfo(name = "playback_ref") val playbackRef: String,
     @ColumnInfo(name = "added_at") val addedAtMillis: Long,
+    @ColumnInfo(name = "on_home", defaultValue = "0") val onHome: Boolean = false,
 )
 
 fun FavoriteChannelEntity.toModel() = LiveChannel(

@@ -49,9 +49,11 @@ fun PosterImageCard(
     size: DpSize = PosterSize.Portrait,
     subtitle: String? = null,
     progress: Float? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     Card(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier.size(size),
         shape = CardDefaults.shape(RoundedCornerShape(Radius.card)),
         scale = CardDefaults.scale(focusedScale = Focus.CARD_SCALE),

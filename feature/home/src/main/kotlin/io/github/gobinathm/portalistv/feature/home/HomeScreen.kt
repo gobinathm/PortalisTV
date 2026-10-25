@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,6 +34,10 @@ import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.datastore.HomeRow
+import io.github.gobinathm.portalistv.core.designsystem.component.ActionDialog
+import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
+import io.github.gobinathm.portalistv.core.designsystem.component.FavoriteAction
+import io.github.gobinathm.portalistv.core.designsystem.component.FavoriteMenu
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
@@ -70,6 +75,8 @@ fun HomeScreen(actions: HomeActions, modifier: Modifier = Modifier, viewModel: H
         actions,
         onRetry = viewModel::retry,
         onCategoryFocused = viewModel::previewCategory,
+        onFavoriteAction = viewModel::onFavoriteAction,
+        onRemoveProgress = viewModel::removeFromContinueWatching,
         modifier = modifier,
     )
 }
@@ -81,9 +88,14 @@ private fun HomeContent(
     actions: HomeActions,
     onRetry: () -> Unit,
     onCategoryFocused: (LiveCategory) -> Unit,
+    onFavoriteAction: (LiveChannel, FavoriteAction) -> Unit,
+    onRemoveProgress: (WatchProgress) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val firstFocus = remember { FocusRequester() }
+    // Hold OK on a channel or on Continue Watching opens a small menu for it.
+    var channelMenu by remember { mutableStateOf<LiveChannel?>(null) }
+    var progressMenu by remember { mutableStateOf<WatchProgress?>(null) }
     // The first focus goes to the first row that is shown and has something in it.
     val firstRow = state.rows.firstOrNull { row -> state.hasContent(row) }.takeIf { state.error == null }
     LazyColumn(
@@ -101,16 +113,19 @@ private fun HomeContent(
             val focus = firstFocus.takeIf { row == firstRow }
             when (row) {
                 HomeRow.CONTINUE_WATCHING -> item(key = "continue") {
-                    ContinueWatchingRow(state.continueWatching, imageLoader, actions, focus)
+                    ContinueWatchingRow(state.continueWatching, imageLoader, actions, focus) { progressMenu = it }
                 }
                 HomeRow.FAVORITES -> item(key = "favorites") {
-                    FavoritesRow(state.favorites, imageLoader, actions, focus)
+                    FavoritesRow(state.homeFavorites, imageLoader, actions, focus) { channelMenu = it }
                 }
                 HomeRow.LIVE_TV -> {
-                    item(key = "categories") { CategoriesRow(state.categories, actions, focus, onCategoryFocused) }
+                    item(key = "categories") {
+                        val hasFavorites = state.favorites.isNotEmpty()
+                        CategoriesRow(state.categories, hasFavorites, actions, focus, onCategoryFocused)
+                    }
                     // The focused category's channels stay right under the categories.
                     state.preview?.takeIf { it.channels.isNotEmpty() }?.let { preview ->
-                        item(key = "preview") { PreviewRow(preview, imageLoader, actions) }
+                        item(key = "preview") { PreviewRow(preview, imageLoader, actions) { channelMenu = it } }
                     }
                 }
                 HomeRow.ON_DEMAND -> item(key = "vod") { VodCategoriesRow(state.vodCategories, actions, focus) }
@@ -120,11 +135,60 @@ private fun HomeContent(
     LaunchedEffect(state.error != null, firstRow) {
         runCatching { firstFocus.requestFocus() }
     }
+    HomeMenus(
+        state,
+        channelMenu,
+        progressMenu,
+        onFavoriteAction,
+        onRemoveProgress,
+        onClose = {
+            channelMenu = null
+            progressMenu = null
+        },
+    )
 }
+
+/** The hold-OK menu open, if any: for a channel, or for an entry of Continue Watching. */
+@Composable
+@Suppress("LongParameterList") // The menu targets and their callbacks.
+private fun HomeMenus(
+    state: HomeUiState,
+    channelMenu: LiveChannel?,
+    progressMenu: WatchProgress?,
+    onFavoriteAction: (LiveChannel, FavoriteAction) -> Unit,
+    onRemoveProgress: (WatchProgress) -> Unit,
+    onClose: () -> Unit,
+) {
+    channelMenu?.let { channel ->
+        FavoriteMenu(
+            channel = channel,
+            isFavorite = state.favorites.any { it.id == channel.id },
+            onHome = state.homeFavorites.any { it.id == channel.id },
+            onAction = { action ->
+                onFavoriteAction(channel, action)
+                onClose()
+            },
+            onDismiss = onClose,
+        )
+    }
+    progressMenu?.let { progress ->
+        ActionDialog(
+            title = progress.title,
+            actions = listOf(ChoiceOption(REMOVE, stringResource(R.string.home_continue_remove))),
+            onSelect = {
+                onRemoveProgress(progress)
+                onClose()
+            },
+            onDismiss = onClose,
+        )
+    }
+}
+
+private const val REMOVE = "remove"
 
 private fun HomeUiState.hasContent(row: HomeRow): Boolean = when (row) {
     HomeRow.CONTINUE_WATCHING -> continueWatching.isNotEmpty()
-    HomeRow.FAVORITES -> favorites.isNotEmpty()
+    HomeRow.FAVORITES -> homeFavorites.isNotEmpty()
     HomeRow.LIVE_TV -> categories.isNotEmpty()
     HomeRow.ON_DEMAND -> vodCategories.isNotEmpty()
 }
@@ -218,11 +282,14 @@ private fun HomePreview() {
                     LiveCategory("3", "Tamil", adult = false),
                 ),
                 favorites = listOf(LiveChannel("1", "Test Pattern", 1, null, "1", adult = false, playbackRef = "")),
+                homeFavorites = listOf(LiveChannel("1", "Test Pattern", 1, null, "1", adult = false, playbackRef = "")),
             ),
             imageLoader = null,
             actions = HomeActions({}, {}, { _, _ -> }, {}, {}, {}, {}),
             onRetry = {},
             onCategoryFocused = {},
+            onFavoriteAction = { _, _ -> },
+            onRemoveProgress = {},
         )
     }
 }

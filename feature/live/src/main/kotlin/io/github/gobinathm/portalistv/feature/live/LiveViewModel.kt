@@ -13,6 +13,7 @@ import io.github.gobinathm.portalistv.core.data.ProfileRepository
 import io.github.gobinathm.portalistv.core.data.image.PortalImages
 import io.github.gobinathm.portalistv.core.data.source.ContentSources
 import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
+import io.github.gobinathm.portalistv.core.designsystem.component.FavoriteAction
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.ContentSource
 import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
@@ -45,6 +46,8 @@ data class LiveUiState(
     /** The last portal request failed; [LiveViewModel.retry] repeats it. */
     val failed: Boolean = false,
     val favoriteIds: Set<String> = emptySet(),
+    /** Favorites shown in Home's Favorites row. */
+    val homeIds: Set<String> = emptySet(),
     /** Guide entries per channel id, for the channels that have been on screen. */
     val guide: Map<String, List<Programme>> = emptyMap(),
     /** The clock the guide is shown against; ticks while the screen is open. */
@@ -102,6 +105,9 @@ class LiveViewModel @Inject constructor(
                 _state.update { it.copy(favoriteIds = list.mapTo(HashSet()) { channel -> channel.id }) }
                 if (_state.value.selectedCategoryId == FAVORITES_CATEGORY) showFavorites()
             }
+        }
+        viewModelScope.launch {
+            favorites.homeIds(profileId).collect { ids -> _state.update { it.copy(homeIds = ids) } }
         }
         viewModelScope.launch {
             while (isActive) {
@@ -168,9 +174,16 @@ class LiveViewModel @Inject constructor(
         loadGuide()
     }
 
-    /** Adds the channel to favorites, or removes it. */
-    fun toggleFavorite(channel: LiveChannel) {
-        viewModelScope.launch { favorites.toggle(profileId, channel) }
+    /** What was chosen for [channel]: adding it to favorites, or a change from a favorite's menu. */
+    fun onFavoriteAction(channel: LiveChannel, action: FavoriteAction) {
+        viewModelScope.launch {
+            when (action) {
+                FavoriteAction.ADD -> favorites.add(profileId, channel)
+                FavoriteAction.SHOW_ON_HOME -> favorites.setOnHome(profileId, channel.id, onHome = true)
+                FavoriteAction.HIDE_FROM_HOME -> favorites.setOnHome(profileId, channel.id, onHome = false)
+                FavoriteAction.REMOVE -> favorites.remove(profileId, channel.id)
+            }
+        }
     }
 
     /** The portal page [channel] came from, so the player zaps on from there. */
