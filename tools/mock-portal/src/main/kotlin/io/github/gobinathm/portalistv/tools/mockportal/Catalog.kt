@@ -30,7 +30,7 @@ class Catalog(
         MockGenre("4", "Adult (empty)", censored = true),
     )
 
-    val vodCategories = listOf("10" to "Movies", "11" to "Series", "12" to "Filler movies")
+    val vodCategories = listOf("10" to "Films", "11" to "Series", "12" to "Filler movies")
 
     /** On-demand items in the order they were "added"; the portal lists the newest first. */
     val vod: List<MockVod> = buildList {

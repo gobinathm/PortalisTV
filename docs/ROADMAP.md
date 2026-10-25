@@ -41,6 +41,7 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [x] Themes and accent, home-row editor, key mapping, parental lock
 
 ## M8 — Hardening & v1.0
+- [ ] Performance pass, once features are done: meet the [scrolling budget](ARCHITECTURE.md#performance-budget) with `ScrollBenchmark` (see [benchmark/README.md](../benchmark/README.md)). On the Google TV Streamer (Oct 2026), P95 frame time was 29 ms for the channel list and 34 ms for the On Demand grid, with the Baseline Profile in. Start from the Perfetto traces; suspects are the poster focus glow and the missing `contentType` in the grid
 - [ ] Security self-audit (OWASP MASVS L1), license audit, `THIRD_PARTY_NOTICES.md`
 - [ ] Install guide verified on real TVs; v1.0.0 tag
 

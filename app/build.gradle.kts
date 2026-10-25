@@ -64,6 +64,7 @@ android {
             initWith(getByName("release"))
             applicationIdSuffix = ".benchmark"
             signingConfig = signingConfigs.getByName("debug")
+            proguardFiles("benchmark-rules.pro")
             matchingFallbacks += "release"
         }
     }

@@ -14,4 +14,4 @@ Macrobenchmarks for the performance budget in [docs/ARCHITECTURE.md](../docs/ARC
    This installs the app's `benchmark` build (release code, debug signature, package `io.github.gobinathm.portalistv.benchmark`) next to your normal install, and replaces that build's profiles with one for the mock portal.
 3. Results are in `benchmark/build/outputs/connected_android_test_additional_output/`.
 
-`LiveScrollBenchmark` opens All channels and presses Down 80 times per iteration. Look at `frameDurationCpuMs` P95 (budget: ≤ 16 ms) and `frameOverrunMs`.
+`ScrollBenchmark` opens All channels (Live TV) and Everything (On Demand) and presses Down 80 times per iteration in each. Look at `frameDurationCpuMs` P95 (budget: ≤ 16 ms) and `frameOverrunMs`.
