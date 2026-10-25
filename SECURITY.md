@@ -19,4 +19,4 @@ Out of scope: third-party portals and streams, and vulnerabilities in upstream l
 - Secrets are redacted from all logs.
 - Dependencies are pinned and verified. CI actions are pinned to commit SHAs.
 
-Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#security).
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#security). The latest self-audit against OWASP MASVS: [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md).
