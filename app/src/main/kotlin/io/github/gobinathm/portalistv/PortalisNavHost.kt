@@ -19,6 +19,7 @@ import io.github.gobinathm.portalistv.feature.player.PlayerScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorScreen
 import io.github.gobinathm.portalistv.feature.profiles.editor.ProfileEditorViewModel
 import io.github.gobinathm.portalistv.feature.profiles.list.ProfilesScreen
+import io.github.gobinathm.portalistv.feature.settings.AboutScreen
 import io.github.gobinathm.portalistv.feature.settings.ParentalGate
 import io.github.gobinathm.portalistv.feature.settings.SettingsScreen
 import io.github.gobinathm.portalistv.feature.vod.VodBrowseScreen
@@ -31,6 +32,9 @@ private data object ProfilesRoute
 
 @Serializable
 private data object SettingsRoute
+
+@Serializable
+private data object AboutRoute
 
 /**
  * Edits a profile, or creates one when [profileId] is 0. The property name is the argument key
@@ -117,8 +121,14 @@ fun PortalisNavHost() {
             )
         }
         composable<SettingsRoute> {
-            ParentalGate(onLeave = { navController.popBackStack() }) { SettingsScreen() }
+            ParentalGate(onLeave = { navController.popBackStack() }) {
+                SettingsScreen(
+                    version = BuildConfig.VERSION_NAME,
+                    onAbout = { navController.navigate(AboutRoute) },
+                )
+            }
         }
+        composable<AboutRoute> { AboutScreen(version = BuildConfig.VERSION_NAME) }
         composable<ProfileEditorRoute> {
             ParentalGate(onLeave = { navController.popBackStack() }) {
                 ProfileEditorScreen(onDone = { navController.popBackStack() })

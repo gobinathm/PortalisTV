@@ -34,11 +34,17 @@ import io.github.gobinathm.portalistv.core.player.labelRes
 
 private enum class Picker { BUFFER, DECODING, DEINTERLACE, ASPECT, AUDIO_LANGUAGE, SUBTITLE_LANGUAGE }
 
+/** [version] is the app's version name; [onAbout] opens the About screen. */
 @Composable
-fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    version: String,
+    onAbout: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: SettingsViewModel = hiltViewModel(),
+) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val profiles by viewModel.profiles.collectAsStateWithLifecycle()
-    settings?.let { SettingsContent(it, profiles, viewModel, modifier) }
+    settings?.let { SettingsContent(it, profiles, viewModel, version, onAbout, modifier) }
 }
 
 @Composable
@@ -46,6 +52,8 @@ private fun SettingsContent(
     settings: AppSettings,
     profiles: List<StartProfile>,
     viewModel: SettingsViewModel,
+    version: String,
+    onAbout: () -> Unit,
     modifier: Modifier,
 ) {
     val player = settings.player
@@ -67,6 +75,7 @@ private fun SettingsContent(
         item(key = "parental") { ParentalSection(settings, viewModel) }
         // With one profile there is nothing to choose: it always opens.
         if (profiles.size > 1) startRows(settings, profiles, onPick = { pickingStartProfile = true })
+        aboutRows(version, onAbout)
     }
     LaunchedEffect(Unit) { runCatching { firstRow.requestFocus() } }
     if (pickingStartProfile) {
@@ -174,6 +183,17 @@ private fun LazyListScope.startRows(settings: AppSettings, profiles: List<StartP
             value = profiles.firstOrNull { it.uuid == settings.startProfileUuid }?.name
                 ?: stringResource(R.string.settings_start_profile_ask),
             onClick = onPick,
+        )
+    }
+}
+
+private fun LazyListScope.aboutRows(version: String, onAbout: () -> Unit) {
+    item { SectionHeader(stringResource(R.string.settings_section_about)) }
+    item {
+        ValueRow(
+            label = stringResource(R.string.settings_about),
+            value = stringResource(R.string.settings_about_hint, version),
+            onClick = onAbout,
         )
     }
 }
