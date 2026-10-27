@@ -46,6 +46,7 @@ import io.github.gobinathm.portalistv.core.designsystem.component.mark
 import io.github.gobinathm.portalistv.core.designsystem.component.pausedMessage
 import io.github.gobinathm.portalistv.core.designsystem.component.railEntries
 import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
+import io.github.gobinathm.portalistv.core.designsystem.component.usingTouch
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
@@ -179,11 +180,12 @@ private fun ChannelPane(
     Column(modifier.padding(end = Spacing.screenHorizontal), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
         PaneHeader(state, actions.onOpenGuide)
         val favorites = state.selectedCategoryId == FAVORITES_CATEGORY
+        val noFavorites = if (usingTouch()) R.string.live_no_favorites_touch else R.string.live_no_favorites
         val message = when {
             state.failed -> R.string.live_failed
             state.loadingCategories || (state.loadingChannels && state.channels.isEmpty()) -> R.string.live_loading
             state.channels.isEmpty() && state.pages.complete ->
-                if (favorites) R.string.live_no_favorites else R.string.live_empty
+                if (favorites) noFavorites else R.string.live_empty
             else -> null
         }
         if (message != null && state.channels.isEmpty()) {
@@ -226,7 +228,7 @@ private fun PaneHeader(state: LiveUiState, onOpenGuide: () -> Unit) {
             }
             FavoriteIcon()
             Text(
-                stringResource(R.string.live_favorite_hint),
+                stringResource(if (usingTouch()) R.string.live_favorite_hint_touch else R.string.live_favorite_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

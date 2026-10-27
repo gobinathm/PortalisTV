@@ -41,6 +41,7 @@ import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
+import io.github.gobinathm.portalistv.core.designsystem.component.usingTouch
 import io.github.gobinathm.portalistv.core.designsystem.theme.Focus
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
@@ -118,7 +119,13 @@ private fun ProfilePicker(
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.l)) {
         Text(stringResource(R.string.profiles_title), style = MaterialTheme.typography.displayMedium)
         Text(
-            stringResource(if (profiles.isEmpty()) R.string.profiles_empty else R.string.profiles_hint),
+            stringResource(
+                when {
+                    profiles.isEmpty() -> R.string.profiles_empty
+                    usingTouch() -> R.string.profiles_hint_touch
+                    else -> R.string.profiles_hint
+                },
+            ),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

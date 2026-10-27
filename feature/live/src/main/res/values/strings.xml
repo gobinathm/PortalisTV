@@ -5,6 +5,8 @@
     <string name="live_favorite">Favorite</string>
     <string name="live_favorite_hint">Hold OK on a channel to add it, or to show a favorite on Home</string>
     <string name="live_no_favorites">No favorites yet. Hold OK on any channel to add it here.</string>
+    <string name="live_favorite_hint_touch">Touch and hold a channel to add it, or to show a favorite on Home</string>
+    <string name="live_no_favorites_touch">No favorites yet. Touch and hold any channel to add it here.</string>
     <!-- %1$s is a start time, %2$s a programme title. -->
     <string name="live_next">Next %1$s  %2$s</string>
     <plurals name="live_channel_count">

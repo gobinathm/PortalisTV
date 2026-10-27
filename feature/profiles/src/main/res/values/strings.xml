@@ -3,6 +3,7 @@
     <!-- Profile picker -->
     <string name="profiles_title">Who\'s watching?</string>
     <string name="profiles_hint">Press OK to open a profile. Hold OK to edit it.</string>
+    <string name="profiles_hint_touch">Tap a profile to open it. Touch and hold to edit it.</string>
     <string name="profiles_empty">Add a profile for your own portal to get started.</string>
     <string name="profiles_add">Add profile</string>
     <string name="profiles_settings">Settings</string>

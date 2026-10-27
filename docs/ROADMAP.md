@@ -59,4 +59,4 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [x] Channel logos for your own build, matched by name in the iptv-org database at build time (`tools/logo-pack`); never committed, optional per build
 - [ ] Android TV home-screen channels
 - [ ] Remote control from a phone (pairing code and TLS)
-- [ ] **Tablets and touch**, after everything else: the app installs and starts on an Android tablet (checked Oct 2026), but taps don't work, so not even a profile can be added. Needs tap and long-press on every screen, touch gestures in the player (seek, change channel), and layouts for portrait and smaller screens
+- [x] **Tablets and touch** (landscape, regular tablet sizes): tap and long-press on every screen, tap and swipe in the player, hints that say "tap" when used by touch. Portrait and phone-size layouts are not planned
