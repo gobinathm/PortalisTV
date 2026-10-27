@@ -47,3 +47,60 @@ jobs:
             **/build/reports/
             build/reports/dependency-verification/
           retention-days: 7
+
+  # Follows docs/INSTALL.md step 2 on the systems the guide covers besides macOS, which the
+  # maintainer checks by hand: a fresh signing key, then signed release APKs.
+  install-guide:
+    name: Install guide build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        # Git Bash on Windows, as the guide says.
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Install Android SDK platform
+        env:
+          SDKMANAGER: sdkmanager${{ runner.os == 'Windows' && '.bat' || '' }}
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/$SDKMANAGER" "platforms;android-37.0" "build-tools;37.0.0" > /dev/null
+
+      - name: Create a signing key
+        run: ./scripts/create-signing-key.sh
+
+      - name: Build release APKs
+        run: ./gradlew :app:assembleRelease
+
+      - name: Check the APKs are signed
+        run: |
+          ls app/build/outputs/apk/release/
+          for abi in arm64-v8a armeabi-v7a universal; do
+            test -f "app/build/outputs/apk/release/app-$abi-release.apk"
+          done
+          ! ls app/build/outputs/apk/release/ | grep -q unsigned
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: install-guide-reports-${{ matrix.os }}
+          path: |
+            **/build/reports/
+            build/reports/dependency-verification/
+          retention-days: 7
