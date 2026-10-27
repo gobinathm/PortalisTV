@@ -29,6 +29,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.player.AspectMode
 import io.github.gobinathm.portalistv.core.player.PlaybackState
@@ -115,7 +116,8 @@ private fun OptionColumn(title: String, options: List<PanelOption>, takeFocus: B
                             Spacer(Modifier.size(CheckSize))
                         }
                     },
-                    modifier = if (index == selectedIndex) Modifier.focusRequester(focus) else Modifier,
+                    modifier = (if (index == selectedIndex) Modifier.focusRequester(focus) else Modifier)
+                        .tapToClick(option.onSelect),
                 )
             }
         }

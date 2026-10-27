@@ -39,6 +39,7 @@ import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
 import io.github.gobinathm.portalistv.core.designsystem.component.FavoriteAction
 import io.github.gobinathm.portalistv.core.designsystem.component.FavoriteMenu
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
@@ -204,8 +205,12 @@ private fun Header(state: HomeUiState, actions: HomeActions) {
             ConnectionStatus(state)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
-            OutlinedButton(onClick = actions.onSwitchProfile) { Text(stringResource(R.string.home_switch_profile)) }
-            OutlinedButton(onClick = actions.onSettings) { Text(stringResource(R.string.home_settings)) }
+            OutlinedButton(onClick = actions.onSwitchProfile, modifier = Modifier.tapToClick(actions.onSwitchProfile)) {
+                Text(stringResource(R.string.home_switch_profile))
+            }
+            OutlinedButton(onClick = actions.onSettings, modifier = Modifier.tapToClick(actions.onSettings)) {
+                Text(stringResource(R.string.home_settings))
+            }
         }
     }
 }
@@ -249,7 +254,7 @@ private fun ErrorPanel(state: HomeUiState, onRetry: () -> Unit, retryFocus: Focu
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Button(onClick = onRetry, modifier = Modifier.focusRequester(retryFocus)) {
+        Button(onClick = onRetry, modifier = Modifier.focusRequester(retryFocus).tapToClick(onRetry)) {
             Text(stringResource(R.string.home_retry))
         }
     }

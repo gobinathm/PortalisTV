@@ -35,6 +35,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.IconButton
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.nowNext
 import io.github.gobinathm.portalistv.core.player.PlaybackState
@@ -194,6 +195,7 @@ private fun ControlButton(
             onClick = onClick,
             modifier = Modifier
                 .size(ControlSize)
+                .tapToClick(onClick)
                 .focusRequester(focusRequester)
                 .onFocusChanged { focused = it.isFocused },
         ) {

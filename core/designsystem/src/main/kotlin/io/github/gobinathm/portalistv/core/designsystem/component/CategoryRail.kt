@@ -106,10 +106,12 @@ fun CategoryRail(
     ) {
         items(entries, key = { it.id }) { entry ->
             val selected = entry.id == selectedId
+            val open = { groupKeyOfEntry(entry.id)?.let(onToggleGroup) ?: onSelect(entry.id) }
             ListItem(
                 selected = selected,
-                onClick = { groupKeyOfEntry(entry.id)?.let(onToggleGroup) ?: onSelect(entry.id) },
+                onClick = open,
                 modifier = Modifier
+                    .tapToClick(open)
                     .then(if (entry.nested) Modifier.padding(start = Spacing.l) else Modifier)
                     .then(if (selected) Modifier.focusRequester(selectedFocus) else Modifier)
                     .onFocusChanged { if (it.isFocused) focused = entry.id },

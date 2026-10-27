@@ -63,6 +63,7 @@ fun PlayerScreen(onExit: () -> Unit, modifier: Modifier = Modifier, viewModel: P
     InternalPlayback(ui, current, viewModel, modifier)
 }
 
+@Suppress("LongMethod") // The screen's state with its key, touch and Back handling, which all change it.
 @Composable
 private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: PlayerViewModel, modifier: Modifier) {
     val playback by player.state.collectAsStateWithLifecycle()
@@ -71,7 +72,7 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
     var panel by remember { mutableStateOf<PlayerPanel?>(null) }
     // The last panel closed, so its button gets focus back.
     var lastPanel by remember { mutableStateOf<PlayerPanel?>(null) }
-    // Bumped on every key press so the overlay's hide timer restarts.
+    // Bumped on every key press and touch so the overlay's hide timer restarts.
     var interaction by remember { mutableIntStateOf(0) }
     val rootFocus = remember { FocusRequester() }
     val screenActions = PlayerUi(showOverlay = { overlayVisible = true }, openPanel = { panel = it })
@@ -108,6 +109,11 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
                 event.type == KeyEventType.KeyDown &&
                     viewModel.handleKey(event.nativeKeyEvent, overlayVisible, panel, playback, player, screenActions)
             }
+            .playerGestures(
+                onTouch = { interaction++ },
+                onTap = { if (panel != null) panel = null else overlayVisible = !overlayVisible },
+                onSwipe = { viewModel.handleSwipe(it, playback) },
+            )
             .focusRequester(rootFocus)
             .focusable(),
     ) {

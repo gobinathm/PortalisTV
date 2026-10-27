@@ -29,6 +29,7 @@ import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
 import io.github.gobinathm.portalistv.core.designsystem.component.TextInputDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.feature.profiles.R
 import io.github.gobinathm.portalistv.feature.profiles.component.ConfirmDialog
@@ -105,9 +106,11 @@ private fun EditorHeader(state: EditorUiState, onSave: () -> Unit, onDelete: () 
             style = MaterialTheme.typography.displayMedium,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
-            Button(onClick = onSave, enabled = !state.busy) { Text(stringResource(R.string.editor_save)) }
+            Button(onClick = onSave, modifier = Modifier.tapToClick(onSave), enabled = !state.busy) {
+                Text(stringResource(R.string.editor_save))
+            }
             if (!state.isNew) {
-                OutlinedButton(onClick = onDelete, enabled = !state.busy) {
+                OutlinedButton(onClick = onDelete, modifier = Modifier.tapToClick(onDelete), enabled = !state.busy) {
                     Text(stringResource(R.string.editor_delete))
                 }
             }

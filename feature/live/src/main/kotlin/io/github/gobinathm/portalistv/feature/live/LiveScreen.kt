@@ -45,6 +45,7 @@ import io.github.gobinathm.portalistv.core.designsystem.component.groupOf
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
 import io.github.gobinathm.portalistv.core.designsystem.component.pausedMessage
 import io.github.gobinathm.portalistv.core.designsystem.component.railEntries
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
@@ -184,7 +185,12 @@ private fun ChannelPane(
         if (message != null && state.channels.isEmpty()) {
             Column(Modifier.padding(horizontal = Spacing.m), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                 Text(stringResource(message), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (state.failed) Button(onClick = actions.onRetry) { Text(stringResource(R.string.live_retry)) }
+                if (state.failed) {
+                    Button(
+                        onClick = actions.onRetry,
+                        modifier = Modifier.tapToClick(actions.onRetry)
+                    ) { Text(stringResource(R.string.live_retry)) }
+                }
             }
         } else {
             ChannelList(state, imageLoader, actions)
@@ -199,7 +205,10 @@ private fun PaneHeader(state: LiveUiState, onOpenGuide: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.l)) {
             Text(category?.label().orEmpty(), style = MaterialTheme.typography.headlineMedium)
             if (state.channels.isNotEmpty()) {
-                OutlinedButton(onClick = onOpenGuide) { Text(stringResource(R.string.live_open_guide)) }
+                OutlinedButton(
+                    onClick = onOpenGuide,
+                    modifier = Modifier.tapToClick(onOpenGuide)
+                ) { Text(stringResource(R.string.live_open_guide)) }
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
@@ -249,7 +258,10 @@ private fun ChannelList(state: LiveUiState, imageLoader: ImageLoader?, actions: 
         }
         if (state.failed) {
             item(key = "retry") {
-                Button(onClick = actions.onRetry) { Text(stringResource(R.string.live_retry)) }
+                Button(
+                    onClick = actions.onRetry,
+                    modifier = Modifier.tapToClick(actions.onRetry)
+                ) { Text(stringResource(R.string.live_retry)) }
             }
         }
     }

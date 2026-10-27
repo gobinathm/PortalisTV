@@ -26,6 +26,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.designsystem.component.ChannelLogo
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.NowNext
@@ -55,7 +56,7 @@ internal fun ChannelRow(
         selected = false,
         onClick = onClick,
         onLongClick = onLongClick,
-        modifier = modifier,
+        modifier = modifier.tapToClick(onClick, onLongClick),
         leadingContent = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

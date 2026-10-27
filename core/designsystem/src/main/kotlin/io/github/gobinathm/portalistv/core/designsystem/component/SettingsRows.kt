@@ -30,7 +30,7 @@ fun ValueRow(
     ListItem(
         selected = false,
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.tapToClick(onClick),
         headlineContent = { Text(label) },
         supportingContent = {
             if (error != null) {
@@ -51,10 +51,11 @@ fun SwitchRow(
     modifier: Modifier = Modifier,
     hint: String? = null,
 ) {
+    val toggle = { onCheckedChange(!checked) }
     ListItem(
         selected = false,
-        onClick = { onCheckedChange(!checked) },
-        modifier = modifier,
+        onClick = toggle,
+        modifier = modifier.tapToClick(toggle),
         headlineContent = { Text(label) },
         supportingContent = hint?.let { { Text(it) } },
         trailingContent = { Switch(checked = checked, onCheckedChange = null) },
@@ -67,7 +68,7 @@ fun ActionRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
     ListItem(
         selected = false,
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.tapToClick(onClick),
         headlineContent = { Text(label, color = MaterialTheme.colorScheme.primary) },
         supportingContent = hint?.let { { Text(it) } },
     )

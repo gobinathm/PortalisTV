@@ -39,6 +39,7 @@ import androidx.tv.material3.Text
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.Episode
@@ -92,7 +93,10 @@ private fun DetailContent(
             val season = state.selectedSeason
             when {
                 state.failed -> item(key = "failed") {
-                    Button(onClick = onRetry) { Text(stringResource(R.string.vod_retry)) }
+                    Button(
+                        onClick = onRetry,
+                        modifier = Modifier.tapToClick(onRetry)
+                    ) { Text(stringResource(R.string.vod_retry)) }
                 }
                 state.loadingSeasons -> item(key = "loading") { Hint(stringResource(R.string.vod_seasons_loading)) }
                 state.loadingEpisodes -> item(key = "loading") { Hint(stringResource(R.string.vod_episodes_loading)) }
@@ -165,21 +169,24 @@ private fun PlayButtons(item: VodItem, state: VodDetailUiState, onPlay: (VodPlay
             // Series start from an episode; offer to carry on with the last one watched.
             val last = state.lastEpisode
             if (last != null && !last.finished) {
+                val continueEpisode = { onPlay(VodPlayRequest(item, last.playback, last.subtitle, startOver = false)) }
                 Button(
-                    onClick = { onPlay(VodPlayRequest(item, last.playback, last.subtitle, startOver = false)) },
-                    modifier = Modifier.focusRequester(focus),
+                    onClick = continueEpisode,
+                    modifier = Modifier.focusRequester(focus).tapToClick(continueEpisode),
                 ) { Text(stringResource(R.string.vod_continue_episode, last.subtitle.orEmpty())) }
             }
         } else {
             val progress = state.movieProgress?.takeIf { !it.finished && it.positionMs > 0 }
-            Button(onClick = { onPlay(VodPlayRequest.movie(item)) }, modifier = Modifier.focusRequester(focus)) {
+            val play = { onPlay(VodPlayRequest.movie(item)) }
+            Button(onClick = play, modifier = Modifier.focusRequester(focus).tapToClick(play)) {
                 Text(
                     progress?.let { stringResource(R.string.vod_resume, formatTime(it.positionMs)) }
                         ?: stringResource(R.string.vod_play),
                 )
             }
             if (progress != null) {
-                OutlinedButton(onClick = { onPlay(VodPlayRequest.movie(item, startOver = true)) }) {
+                val startOver = { onPlay(VodPlayRequest.movie(item, startOver = true)) }
+                OutlinedButton(onClick = startOver, modifier = Modifier.tapToClick(startOver)) {
                     Text(stringResource(R.string.vod_start_over))
                 }
             }
@@ -193,10 +200,11 @@ private fun SeasonTabs(state: VodDetailUiState, onSelect: (Season) -> Unit) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
         items(state.seasons, key = { it.id }) { season ->
             val label = season.number?.let { "S$it" } ?: season.title
+            val select = { onSelect(season) }
             if (season.id == state.selectedSeasonId) {
-                Button(onClick = { onSelect(season) }) { Text(label) }
+                Button(onClick = select, modifier = Modifier.tapToClick(select)) { Text(label) }
             } else {
-                OutlinedButton(onClick = { onSelect(season) }) { Text(label) }
+                OutlinedButton(onClick = select, modifier = Modifier.tapToClick(select)) { Text(label) }
             }
         }
     }
@@ -207,6 +215,7 @@ private fun EpisodeRow(episode: Episode, progress: Float?, onClick: () -> Unit) 
     ListItem(
         selected = false,
         onClick = onClick,
+        modifier = Modifier.tapToClick(onClick),
         headlineContent = {
             Text(
                 listOfNotNull(episode.number?.let { "E$it" }, episode.title).joinToString("   "),

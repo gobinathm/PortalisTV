@@ -50,6 +50,7 @@ import io.github.gobinathm.portalistv.core.designsystem.component.groupOf
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
 import io.github.gobinathm.portalistv.core.designsystem.component.pausedMessage
 import io.github.gobinathm.portalistv.core.designsystem.component.railEntries
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
@@ -149,7 +150,12 @@ private fun VodBrowseContent(
                     verticalArrangement = Arrangement.spacedBy(Spacing.m),
                 ) {
                     Text(stringResource(message), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (state.failed) Button(onClick = onRetry) { Text(stringResource(R.string.vod_retry)) }
+                    if (state.failed) {
+                        Button(
+                            onClick = onRetry,
+                            modifier = Modifier.tapToClick(onRetry)
+                        ) { Text(stringResource(R.string.vod_retry)) }
+                    }
                 }
             } else {
                 PosterGrid(state, imageLoader, onScrolledTo, onOpen)
@@ -192,22 +198,27 @@ private fun FilterButtons(state: VodBrowseUiState, actions: FilterActions) {
     val year = state.years.firstOrNull { it.id == filter.yearId }
     val searchFocus = remember { FocusRequester() }
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
-        OutlinedButton(onClick = { searching = true }, modifier = Modifier.focusRequester(searchFocus)) {
+        val search = { searching = true }
+        OutlinedButton(onClick = search, modifier = Modifier.focusRequester(searchFocus).tapToClick(search)) {
             val label = filter.search.ifBlank { null }?.let { stringResource(R.string.vod_search_for, it) }
             Text(label ?: stringResource(R.string.vod_search))
         }
         if (state.years.isNotEmpty()) {
-            OutlinedButton(onClick = { pickingYear = true }) {
+            val pickYear = { pickingYear = true }
+            OutlinedButton(onClick = pickYear, modifier = Modifier.tapToClick(pickYear)) {
                 Text(year?.title ?: stringResource(R.string.vod_any_year))
             }
         }
         if (!filter.isEmpty) {
-            OutlinedButton(onClick = {
+            val clear = {
                 // Clear goes away with the filter; keep focus in the header rather than losing it to the rail.
                 searchFocus.requestFocus()
                 actions.onSearch("")
                 actions.onSelectYear(null)
-            }) { Text(stringResource(R.string.vod_clear_filter)) }
+            }
+            OutlinedButton(onClick = clear, modifier = Modifier.tapToClick(clear)) {
+                Text(stringResource(R.string.vod_clear_filter))
+            }
         }
     }
     if (searching) {

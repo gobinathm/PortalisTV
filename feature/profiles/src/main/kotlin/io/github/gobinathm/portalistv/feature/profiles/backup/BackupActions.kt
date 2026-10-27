@@ -21,6 +21,7 @@ import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
 import io.github.gobinathm.portalistv.core.designsystem.component.TextInputDialog
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.feature.profiles.R
 import io.github.gobinathm.portalistv.feature.profiles.component.MessageDialog
@@ -143,9 +144,13 @@ private inline fun launchOrReport(viewModel: BackupViewModel, launch: () -> Unit
 private fun BackupButtons(canExport: Boolean, onExport: () -> Unit, onImport: () -> Unit, modifier: Modifier) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
         if (canExport) {
-            OutlinedButton(onClick = onExport) { Text(stringResource(R.string.backup_export)) }
+            OutlinedButton(onClick = onExport, modifier = Modifier.tapToClick(onExport)) {
+                Text(stringResource(R.string.backup_export))
+            }
         }
-        OutlinedButton(onClick = onImport) { Text(stringResource(R.string.backup_import)) }
+        OutlinedButton(onClick = onImport, modifier = Modifier.tapToClick(onImport)) {
+            Text(stringResource(R.string.backup_import))
+        }
     }
 }
 

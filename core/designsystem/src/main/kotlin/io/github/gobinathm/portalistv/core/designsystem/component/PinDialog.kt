@@ -97,11 +97,11 @@ fun PinDialog(
 private fun PadKey(key: Int, onClick: () -> Unit, modifier: Modifier) {
     val label = if (key == ERASE) "⌫" else key.toString()
     if (key == ERASE) {
-        OutlinedButton(onClick = onClick, modifier = modifier.size(KeySize)) {
+        OutlinedButton(onClick = onClick, modifier = modifier.size(KeySize).tapToClick(onClick)) {
             Box(contentAlignment = Alignment.Center) { Text(label) }
         }
     } else {
-        Button(onClick = onClick, modifier = modifier.size(KeySize)) {
+        Button(onClick = onClick, modifier = modifier.size(KeySize).tapToClick(onClick)) {
             Box(contentAlignment = Alignment.Center) { Text(label, style = MaterialTheme.typography.titleLarge) }
         }
     }

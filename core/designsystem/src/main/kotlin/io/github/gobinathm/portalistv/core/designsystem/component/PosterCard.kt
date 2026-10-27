@@ -30,7 +30,7 @@ fun PosterCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.size(size),
+        modifier = modifier.size(size).tapToClick(onClick),
         shape = CardDefaults.shape(RoundedCornerShape(Radius.card)),
         scale = CardDefaults.scale(focusedScale = Focus.CARD_SCALE),
         border = CardDefaults.border(focusedBorder = Border.None),

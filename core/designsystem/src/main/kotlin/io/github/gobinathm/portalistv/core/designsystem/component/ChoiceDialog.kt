@@ -69,7 +69,8 @@ fun ChoiceDialog(
                     onClick = { onSelect(option.key) },
                     headlineContent = { Text(option.label) },
                     leadingContent = { RadioButton(selected = option.key == selectedKey, onClick = null) },
-                    modifier = if (index == selectedIndex) Modifier.focusRequester(focus) else Modifier,
+                    modifier = (if (index == selectedIndex) Modifier.focusRequester(focus) else Modifier)
+                        .tapToClick(onClick = { onSelect(option.key) }),
                 )
             }
         }
@@ -89,7 +90,8 @@ fun ActionDialog(title: String, actions: List<ChoiceOption>, onSelect: (String) 
                     selected = false,
                     onClick = { onSelect(action.key) },
                     headlineContent = { Text(action.label) },
-                    modifier = if (index == 0) Modifier.focusRequester(focus) else Modifier,
+                    modifier = (if (index == 0) Modifier.focusRequester(focus) else Modifier)
+                        .tapToClick(onClick = { onSelect(action.key) }),
                 )
             }
         }

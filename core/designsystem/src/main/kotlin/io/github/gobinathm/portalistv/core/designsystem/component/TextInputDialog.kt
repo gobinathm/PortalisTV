@@ -75,8 +75,15 @@ fun TextInputDialog(
                 .padding(Spacing.m),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
-            Button(onClick = { onConfirm(value.text) }) { Text(stringResource(R.string.dialog_ok)) }
-            OutlinedButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) }
+            val confirm = { onConfirm(value.text) }
+            Button(
+                onClick = confirm,
+                modifier = Modifier.tapToClick(confirm)
+            ) { Text(stringResource(R.string.dialog_ok)) }
+            OutlinedButton(
+                onClick = onDismiss,
+                modifier = Modifier.tapToClick(onDismiss)
+            ) { Text(stringResource(R.string.dialog_cancel)) }
         }
     }
     LaunchedEffect(Unit) {

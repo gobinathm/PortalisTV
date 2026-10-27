@@ -14,6 +14,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.component.DialogFrame
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.feature.profiles.R
 
@@ -24,10 +25,10 @@ fun ConfirmDialog(message: String, confirmLabel: String, onConfirm: () -> Unit, 
         Text(message, style = MaterialTheme.typography.titleLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
             // Cancel is focused first so a stray OK press does nothing destructive.
-            OutlinedButton(onClick = onDismiss, modifier = Modifier.focusRequester(focus)) {
+            OutlinedButton(onClick = onDismiss, modifier = Modifier.focusRequester(focus).tapToClick(onDismiss)) {
                 Text(stringResource(R.string.editor_cancel))
             }
-            Button(onClick = onConfirm) { Text(confirmLabel) }
+            Button(onClick = onConfirm, modifier = Modifier.tapToClick(onConfirm)) { Text(confirmLabel) }
         }
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
@@ -40,7 +41,7 @@ fun MessageDialog(message: String, onDismiss: (() -> Unit)?) {
     DialogFrame(onDismiss = onDismiss ?: {}) {
         Text(message, style = MaterialTheme.typography.titleLarge)
         if (onDismiss != null) {
-            Button(onClick = onDismiss, modifier = Modifier.focusRequester(focus)) {
+            Button(onClick = onDismiss, modifier = Modifier.focusRequester(focus).tapToClick(onDismiss)) {
                 Text(stringResource(R.string.editor_ok))
             }
             LaunchedEffect(Unit) { focus.requestFocus() }

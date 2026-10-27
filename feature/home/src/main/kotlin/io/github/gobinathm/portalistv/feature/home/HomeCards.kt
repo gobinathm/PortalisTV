@@ -29,6 +29,7 @@ import io.github.gobinathm.portalistv.core.designsystem.component.ChannelLogo
 import io.github.gobinathm.portalistv.core.designsystem.component.Language
 import io.github.gobinathm.portalistv.core.designsystem.component.artwork
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Focus
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
@@ -176,7 +177,7 @@ private fun HomeCard(
     Card(
         onClick = onClick,
         onLongClick = onLongClick,
-        modifier = modifier.size(CardSize),
+        modifier = modifier.size(CardSize).tapToClick(onClick, onLongClick),
         shape = CardDefaults.shape(RoundedCornerShape(Radius.card)),
         scale = CardDefaults.scale(focusedScale = Focus.CARD_SCALE),
         border = CardDefaults.border(focusedBorder = Border.None),

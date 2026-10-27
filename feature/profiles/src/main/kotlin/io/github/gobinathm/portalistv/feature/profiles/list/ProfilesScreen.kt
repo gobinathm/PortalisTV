@@ -40,6 +40,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Focus
 import io.github.gobinathm.portalistv.core.designsystem.theme.PortalisTheme
 import io.github.gobinathm.portalistv.core.designsystem.theme.Radius
@@ -70,7 +71,9 @@ fun ProfilesScreen(
     ProfilesContent(state, onOpen, onEdit, onAdd, modifier) { canExport ->
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
             BackupActions(canExport)
-            OutlinedButton(onClick = onSettings) { Text(stringResource(R.string.profiles_settings)) }
+            OutlinedButton(onClick = onSettings, modifier = Modifier.tapToClick(onSettings)) {
+                Text(stringResource(R.string.profiles_settings))
+            }
         }
     }
 }
@@ -179,7 +182,7 @@ private fun ProfileTile(
     Card(
         onClick = onClick,
         onLongClick = onLongClick,
-        modifier = modifier.size(TileSize),
+        modifier = modifier.size(TileSize).tapToClick(onClick, onLongClick),
         shape = CardDefaults.shape(RoundedCornerShape(Radius.card)),
         scale = CardDefaults.scale(focusedScale = Focus.CARD_SCALE),
         border = CardDefaults.border(focusedBorder = Border.None),

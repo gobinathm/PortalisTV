@@ -52,6 +52,7 @@ import androidx.tv.material3.Text
 import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.designsystem.component.ChannelLogo
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
+import io.github.gobinathm.portalistv.core.designsystem.component.tapToClick
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.LiveChannel
 import io.github.gobinathm.portalistv.core.model.Programme
@@ -292,7 +293,8 @@ private fun BlockCell(block: GuideBlock, x: Dp, width: Dp, modifier: Modifier, o
             .wrapContentWidth(Alignment.Start, unbounded = true)
             .width(width)
             .fillMaxHeight()
-            .padding(end = 2.dp),
+            .padding(end = 2.dp)
+            .tapToClick(onClick),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(6.dp)),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = MaterialTheme.colorScheme.surface,
