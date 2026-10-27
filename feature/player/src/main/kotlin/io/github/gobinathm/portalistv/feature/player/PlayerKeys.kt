@@ -26,19 +26,30 @@ private fun digitOf(code: Int): Int? = when (code) {
     else -> null
 }
 
+/** Up/Down and the remote's channel buttons, with the step each one zaps. */
+private fun zapStepOf(code: Int): Int? = when (code) {
+    KEYCODE_DPAD_UP, KEYCODE_CHANNEL_UP -> +1
+    KEYCODE_DPAD_DOWN, KEYCODE_CHANNEL_DOWN -> -1
+    else -> null
+}
+
 /**
- * Keys on the playback screen. Number keys always pick a channel; the rest act only while the
- * controls are hidden. Returns true when the key was used.
+ * Keys on the playback screen. Number keys always pick a channel, and on live TV Up/Down zap
+ * unless a side panel is open; the rest act only while the controls are hidden. Returns true
+ * when the key was used.
  */
+@Suppress("LongParameterList") // What the screen shows decides what a key does.
 internal fun PlayerViewModel.handleKey(
     event: KeyEvent,
     overlayVisible: Boolean,
+    panel: PlayerPanel?,
     playback: PlaybackState,
     player: Player,
     ui: PlayerUi,
 ): Boolean {
     val digit = digitOf(event.keyCode)
     val seek = event.keyCode == KEYCODE_DPAD_LEFT || event.keyCode == KEYCODE_DPAD_RIGHT
+    val zapStep = zapStepOf(event.keyCode)
     val bound = keyBindings[event.keyCode]
     return when {
         digit != null -> {
@@ -50,12 +61,18 @@ internal fun PlayerViewModel.handleKey(
             perform(bound, playback, player, ui)
             true
         }
+        // The control bar is a single row, so Up/Down are free to zap while it shows, as they
+        // must: a new channel shows its title and the controls for a few seconds.
+        zapStep != null && panel == null && state.value.channel != null -> {
+            zap(zapStep)
+            true
+        }
         overlayVisible -> false
         seek && playback.seekable -> {
             scrub(forward = event.keyCode == KEYCODE_DPAD_RIGHT, repeatCount = event.repeatCount)
             true
         }
-        else -> handleControlKey(event.keyCode, playback, player, this, ui.showOverlay)
+        else -> handleControlKey(event.keyCode, playback, player, ui.showOverlay)
     }
 }
 
@@ -83,12 +100,9 @@ private fun handleControlKey(
     code: Int,
     playback: PlaybackState,
     player: Player,
-    viewModel: PlayerViewModel,
     showOverlay: () -> Unit,
 ): Boolean {
     when (code) {
-        KEYCODE_DPAD_UP, KEYCODE_CHANNEL_UP -> viewModel.zap(+1)
-        KEYCODE_DPAD_DOWN, KEYCODE_CHANNEL_DOWN -> viewModel.zap(-1)
         KEYCODE_DPAD_CENTER, KEYCODE_ENTER -> showOverlay()
         // Seekable streams scrub instead (see handleKey); live ones show the controls.
         KEYCODE_DPAD_LEFT, KEYCODE_DPAD_RIGHT -> showOverlay()

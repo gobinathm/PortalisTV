@@ -106,7 +106,7 @@ private fun InternalPlayback(ui: PlayerUiState, player: Player, viewModel: Playe
             .onPreviewKeyEvent { event ->
                 interaction++
                 event.type == KeyEventType.KeyDown &&
-                    viewModel.handleKey(event.nativeKeyEvent, overlayVisible, playback, player, screenActions)
+                    viewModel.handleKey(event.nativeKeyEvent, overlayVisible, panel, playback, player, screenActions)
             }
             .focusRequester(rootFocus)
             .focusable(),
