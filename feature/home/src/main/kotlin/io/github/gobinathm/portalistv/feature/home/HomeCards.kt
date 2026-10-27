@@ -26,6 +26,7 @@ import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryMark
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryMarkView
 import io.github.gobinathm.portalistv.core.designsystem.component.ChannelLogo
+import io.github.gobinathm.portalistv.core.designsystem.component.Language
 import io.github.gobinathm.portalistv.core.designsystem.component.artwork
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
 import io.github.gobinathm.portalistv.core.designsystem.theme.Focus
@@ -40,6 +41,9 @@ private val CategoryIconSize = 48.dp
 
 /** The number badge's backing on a title card. */
 private const val BADGE_ALPHA = 0.35f
+
+/** The category name under a language's own name, a step quieter. */
+private const val LANGUAGE_LABEL_ALPHA = 0.8f
 
 @Composable
 internal fun ChannelCard(
@@ -105,13 +109,49 @@ internal fun CategoryCard(category: LiveCategory, onClick: () -> Unit, modifier:
     )
 }
 
-/** A category: its icon (or initials) above its name. */
+/** A category: its icon (or initials) above its name; a language gets a tile of its own. */
 @Composable
 internal fun IconCard(label: String, mark: CategoryMark, onClick: () -> Unit, modifier: Modifier) {
+    if (mark is CategoryMark.Script) {
+        LanguageCard(label, mark.language, onClick, modifier)
+        return
+    }
     HomeCard(onClick, modifier) {
         CenteredContent {
             CategoryMarkView(mark, size = CategoryIconSize)
             Text(label, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+/**
+ * A language category drawn as artwork: the language in its own script, large, on a colour picked
+ * from it (so every Hindi category matches), with the category's name below.
+ */
+@Composable
+private fun LanguageCard(label: String, language: Language, onClick: () -> Unit, modifier: Modifier) {
+    HomeCard(onClick, modifier) {
+        Column(
+            Modifier.fillMaxSize().artwork(language.native).padding(Spacing.m),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterVertically),
+        ) {
+            Text(
+                language.native,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White.copy(alpha = LANGUAGE_LABEL_ALPHA),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

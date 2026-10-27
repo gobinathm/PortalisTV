@@ -28,6 +28,10 @@ class Catalog(
         MockGenre("2", "Movies"),
         MockGenre("3", "Filler"),
         MockGenre("4", "Adult (empty)", censored = true),
+        // Named like the language categories of real portals, so their tiles can be checked.
+        MockGenre("5", "HINDI"),
+        MockGenre("6", "TAMIL MOVIES"),
+        MockGenre("7", "Bangla News"),
     )
 
     val vodCategories = listOf("10" to "Films", "11" to "Series", "12" to "Filler movies")
@@ -53,5 +57,8 @@ class Catalog(
             val stream = if (i % 2 == 0) APPLE_BIPBOP else BIG_BUCK_BUNNY
             add(MockChannel(number, "Filler %0${digits}d".format(i + 1), "3", stream))
         }
+        add(MockChannel(size + 1, "Language Test One", "5", BIG_BUCK_BUNNY))
+        add(MockChannel(size + 1, "Language Test Two", "6", APPLE_BIPBOP))
+        add(MockChannel(size + 1, "Language Test Three", "7", BIG_BUCK_BUNNY))
     }
 }

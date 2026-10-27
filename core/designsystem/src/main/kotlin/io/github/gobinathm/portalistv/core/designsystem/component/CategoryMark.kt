@@ -18,16 +18,22 @@ import io.github.gobinathm.portalistv.core.model.FAVORITES_CATEGORY
 import io.github.gobinathm.portalistv.core.model.LiveCategory
 import io.github.gobinathm.portalistv.core.model.VodCategory
 
-/** How a category is drawn in the rail: a genre icon when its name says what it is, else its initials. */
+/**
+ * How a category is drawn: a genre icon when its name says what it is, the language's own script
+ * when it names a language, else its initials.
+ */
 sealed interface CategoryMark {
     data class Icon(@DrawableRes val res: Int) : CategoryMark
 
     data class Initials(val text: String) : CategoryMark
+
+    data class Script(val language: Language) : CategoryMark
 }
 
 /**
- * Portals send only a category's name, so the icon is guessed from words in it. Language and
- * other categories get initials rather than a guessed flag, which would often be wrong.
+ * Portals send only a category's name, so the mark is guessed from words in it. A language wins
+ * over a genre: portals group by language, so "HINDI MOVIES" next to "TAMIL MOVIES" is told apart
+ * by its language. Languages are written, not flagged; a flag would often be the wrong country.
  */
 fun LiveCategory.mark(): CategoryMark {
     val words = title.lowercase().split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotEmpty() }
@@ -35,9 +41,14 @@ fun LiveCategory.mark(): CategoryMark {
         id == ALL_CATEGORIES -> R.drawable.ic_category_all
         id == FAVORITES_CATEGORY -> R.drawable.ic_favorite
         adult -> R.drawable.ic_category_adult
-        else -> keywordIcon(words)
+        else -> null
     }
-    return icon?.let { CategoryMark.Icon(it) } ?: CategoryMark.Initials(initials(words))
+    val language = if (icon == null) languageIn(words) else null
+    return when {
+        icon != null -> CategoryMark.Icon(icon)
+        language != null -> CategoryMark.Script(language)
+        else -> keywordIcon(words)?.let { CategoryMark.Icon(it) } ?: CategoryMark.Initials(initials(words))
+    }
 }
 
 private val keywordIcons: List<Pair<List<String>, Int>> = listOf(
@@ -69,16 +80,15 @@ private fun initials(words: List<String>): String = when {
 
 private val LARGE_MARK = 32.dp
 
-/** A category's icon, or its initials, centered in a [size] square. */
+/** A category's icon, its language's initial in that script, or its initials, centered in a [size] square. */
 @Composable
 fun CategoryMarkView(mark: CategoryMark, modifier: Modifier = Modifier, size: Dp = 28.dp) {
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
+        val textStyle = with(MaterialTheme.typography) { if (size > LARGE_MARK) headlineMedium else labelMedium }
         when (mark) {
             is CategoryMark.Icon -> Icon(painterResource(mark.res), contentDescription = null, Modifier.size(size))
-            is CategoryMark.Initials -> Text(
-                mark.text,
-                style = with(MaterialTheme.typography) { if (size > LARGE_MARK) headlineMedium else labelMedium },
-            )
+            is CategoryMark.Initials -> Text(mark.text, style = textStyle)
+            is CategoryMark.Script -> Text(mark.language.short, style = textStyle, maxLines = 1, softWrap = false)
         }
     }
 }
