@@ -2,6 +2,7 @@ package io.github.gobinathm.portalistv.benchmark
 
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 
@@ -55,12 +56,17 @@ internal class BenchmarkJourneys(private val scope: MacrobenchmarkScope, private
         device.waitForIdle()
     }
 
-    /** From the channel list [open] left focus in, up to the Guide button and into the guide. */
-    fun openGuide() {
+    /**
+     * From where [open] left focus to the Guide button, and into the guide. On a slow TV the move
+     * into the list can land before the list takes focus, leaving focus on [railEntry]; from
+     * there it is Right, from the list Up.
+     */
+    fun openGuide(railEntry: String) {
         var moves = 0
         while (!focusedHas(GUIDE_BUTTON)) {
             check(moves++ < MAX_ROW_MOVES) { "Couldn't reach the Guide button: ${screenText()}" }
-            press { pressDPadUp() }
+            val onRail = focusedHas(railEntry)
+            press { if (onRail) pressDPadRight() else pressDPadUp() }
             device.waitForIdle()
         }
         press { pressDPadCenter() }
@@ -78,7 +84,12 @@ internal class BenchmarkJourneys(private val scope: MacrobenchmarkScope, private
     /** Whether the focused element (a card) shows [text]; the text sits in a child of the focused node. */
     private fun focusedHas(text: String): Boolean {
         val focused = device.findObject(By.focused(true)) ?: return false
-        return focused.text == text || focused.hasObject(By.text(text))
+        // Focus can move on between finding the node and reading it; callers ask again.
+        return try {
+            focused.text == text || focused.hasObject(By.text(text))
+        } catch (_: StaleObjectException) {
+            false
+        }
     }
 
     /**

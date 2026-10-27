@@ -37,7 +37,7 @@ class ScrollBenchmark {
     /** The TV guide for All channels: each row lays out a timeline of programmes. */
     @Test
     fun scrollGuide() = measureScroll(openCard = "All channels", rowCards = LIVE_ROW, waitFor = "Filler") {
-        openGuide()
+        openGuide(railEntry = "All channels")
     }
 
     private fun measureScroll(

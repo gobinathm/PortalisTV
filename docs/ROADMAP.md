@@ -43,7 +43,7 @@ Foundation first: no user-facing feature is built until security, storage, CI an
 - [x] Language categories written in their own script (हिन्दी, தமிழ், …) on Home and in the category rail
 
 ## M8 — Hardening & v1.0
-- [ ] Performance pass, once features are done: meet the [scrolling budget](ARCHITECTURE.md#performance-budget) with `ScrollBenchmark` (see [benchmark/README.md](../benchmark/README.md)). On the Google TV Streamer (Oct 2026), P95 frame time was 29 ms for the channel list and 34 ms for the On Demand grid, with the Baseline Profile in. The TV guide is in `ScrollBenchmark` now. The Oct 2026 traces show the GPU as the bottleneck (overdraw), not the main thread; the screen backdrop now takes one texture pass instead of three. Next: measure again on the TV, then the poster focus glow
+- [ ] Performance pass, once features are done: meet the [scrolling budget](ARCHITECTURE.md#performance-budget) with `ScrollBenchmark` (see [benchmark/README.md](../benchmark/README.md)). On the Google TV Streamer, P95 frame time went from 29 ms (channel list) and 34 ms (On Demand grid) on Oct 25 to 22 ms and 30 ms on Oct 27, with the median at 10 and 9 ms: the backdrop is now one cached texture pass instead of three full-screen passes, so the GPU no longer holds frames back. What is left are main-thread spikes when a page of 14 arrives: the whole screen recomposes and the grid re-measures (up to 34 ms). The TV guide test is in `ScrollBenchmark` but has not completed a run on the TV yet
 - [x] Security self-audit (OWASP MASVS L1): [SECURITY_AUDIT.md](SECURITY_AUDIT.md)
 - [x] License audit, complete [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)
 - [x] In-app About screen: version, privacy summary, third-party notices
