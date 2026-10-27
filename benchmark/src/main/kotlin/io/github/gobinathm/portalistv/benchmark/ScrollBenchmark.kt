@@ -34,7 +34,18 @@ class ScrollBenchmark {
     fun scrollOnDemandGrid() =
         measureScroll(openCard = "Everything", rowCards = ON_DEMAND_ROW, waitFor = "Filler movie")
 
-    private fun measureScroll(openCard: String, rowCards: Set<String>, waitFor: String) = rule.measureRepeated(
+    /** The TV guide for All channels: each row lays out a timeline of programmes. */
+    @Test
+    fun scrollGuide() = measureScroll(openCard = "All channels", rowCards = LIVE_ROW, waitFor = "Filler") {
+        openGuide()
+    }
+
+    private fun measureScroll(
+        openCard: String,
+        rowCards: Set<String>,
+        waitFor: String,
+        thenOpen: BenchmarkJourneys.() -> Unit = {},
+    ) = rule.measureRepeated(
         packageName = TARGET_PACKAGE,
         metrics = listOf(FrameTimingMetric()),
         compilationMode = CompilationMode.Partial(),
@@ -42,7 +53,7 @@ class ScrollBenchmark {
         // below would land on the TV's home screen instead.
         startupMode = null,
         iterations = ITERATIONS,
-        setupBlock = { BenchmarkJourneys(this, portalUrl).open(openCard, rowCards, waitFor) },
+        setupBlock = { BenchmarkJourneys(this, portalUrl).apply { open(openCard, rowCards, waitFor) }.thenOpen() },
     ) {
         BenchmarkJourneys(this, portalUrl).scroll()
     }

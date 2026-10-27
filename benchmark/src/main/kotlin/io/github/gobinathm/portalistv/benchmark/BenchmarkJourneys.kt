@@ -55,6 +55,21 @@ internal class BenchmarkJourneys(private val scope: MacrobenchmarkScope, private
         device.waitForIdle()
     }
 
+    /** From the channel list [open] left focus in, up to the Guide button and into the guide. */
+    fun openGuide() {
+        var moves = 0
+        while (!focusedHas(GUIDE_BUTTON)) {
+            check(moves++ < MAX_ROW_MOVES) { "Couldn't reach the Guide button: ${screenText()}" }
+            press { pressDPadUp() }
+            device.waitForIdle()
+        }
+        press { pressDPadCenter() }
+        check(device.wait(Until.hasObject(By.textEndsWith("· $GUIDE_BUTTON")), TIMEOUT_MS)) { "The guide didn't open" }
+        // The guide focuses its first channel once the channels are in.
+        check(device.wait(Until.hasObject(By.focused(true)), TIMEOUT_MS)) { "Nothing took focus in the guide" }
+        device.waitForIdle()
+    }
+
     /** What the screen shows, for failure messages. */
     private fun screenText(): String =
         device.currentPackageName + ": " +
@@ -83,5 +98,6 @@ internal class BenchmarkJourneys(private val scope: MacrobenchmarkScope, private
         const val SCROLL_PRESSES = 80
         const val TIMEOUT_MS = 20_000L
         const val MAX_ROW_MOVES = 10
+        const val GUIDE_BUTTON = "Guide"
     }
 }
