@@ -52,6 +52,7 @@ class MockPortal(
         "itv" to "create_link" -> createLink(request)
         "itv" to "get_short_epg" -> shortEpg(request)
         "vod" to "get_categories" -> vod.categories()
+        "vod" to "get_years" -> vod.years(request.query)
         "vod" to "get_ordered_list" -> vod.orderedList(request.query)
         "vod" to "create_link" -> vod.createLink(request.query)
         else -> null

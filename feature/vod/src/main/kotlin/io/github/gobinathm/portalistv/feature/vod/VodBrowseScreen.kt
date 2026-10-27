@@ -21,7 +21,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -32,12 +35,16 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil3.ImageLoader
 import io.github.gobinathm.portalistv.core.data.PinResult
 import io.github.gobinathm.portalistv.core.designsystem.component.CategoryRail
+import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceDialog
+import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
 import io.github.gobinathm.portalistv.core.designsystem.component.PinDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.PosterImageCard
+import io.github.gobinathm.portalistv.core.designsystem.component.TextInputDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.backdrop
 import io.github.gobinathm.portalistv.core.designsystem.component.groupOf
 import io.github.gobinathm.portalistv.core.designsystem.component.mark
@@ -72,6 +79,7 @@ fun VodBrowseScreen(
         onScrolledTo = viewModel::onScrolledTo,
         onRetry = viewModel::retry,
         onOpen = onOpen,
+        filterActions = FilterActions(onSearch = viewModel::search, onSelectYear = viewModel::selectYear),
         modifier = modifier,
     )
     if (state.pinFor != null) {
@@ -98,6 +106,7 @@ private fun VodBrowseContent(
     onScrolledTo: (Int) -> Unit,
     onRetry: () -> Unit,
     onOpen: (VodItem) -> Unit,
+    filterActions: FilterActions,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -126,11 +135,12 @@ private fun VodBrowseContent(
             Modifier.weight(1f).fillMaxHeight().padding(end = Spacing.screenHorizontal),
             verticalArrangement = Arrangement.spacedBy(Spacing.m),
         ) {
-            GridHeader(state)
+            GridHeader(state, filterActions)
             val message = when {
                 state.failed -> R.string.vod_failed
                 state.loadingCategories || (state.loadingItems && state.items.isEmpty()) -> R.string.vod_loading
-                state.items.isEmpty() && state.pages.complete -> R.string.vod_empty
+                state.items.isEmpty() && state.pages.complete ->
+                    if (state.filter.isEmpty) R.string.vod_empty else R.string.vod_no_matches
                 else -> null
             }
             if (message != null && state.items.isEmpty()) {
@@ -148,20 +158,87 @@ private fun VodBrowseContent(
     }
 }
 
+/** What the header's search and year buttons do. */
+private class FilterActions(val onSearch: (String) -> Unit, val onSelectYear: (String?) -> Unit)
+
 @Composable
-private fun GridHeader(state: VodBrowseUiState) {
+private fun GridHeader(state: VodBrowseUiState, actions: FilterActions) {
     val category = state.categories.firstOrNull { it.id == state.selectedCategoryId }
-    Column(Modifier.padding(horizontal = Spacing.m)) {
-        Text(category?.label().orEmpty(), style = MaterialTheme.typography.headlineMedium)
-        if (state.pages.totalItems > 0) {
-            Text(
-                pluralStringResource(R.plurals.vod_item_count, state.pages.totalItems, state.pages.totalItems),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    Row(
+        Modifier.padding(horizontal = Spacing.m),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.l),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(category?.label().orEmpty(), style = MaterialTheme.typography.headlineMedium)
+            if (state.pages.totalItems > 0) {
+                Text(
+                    pluralStringResource(R.plurals.vod_item_count, state.pages.totalItems, state.pages.totalItems),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
+        FilterButtons(state, actions)
     }
 }
+
+/** Search (titles and, on most portals, actors), a year when the portal lists years, and Clear. */
+@Composable
+private fun FilterButtons(state: VodBrowseUiState, actions: FilterActions) {
+    var searching by remember { mutableStateOf(false) }
+    var pickingYear by remember { mutableStateOf(false) }
+    val filter = state.filter
+    val year = state.years.firstOrNull { it.id == filter.yearId }
+    val searchFocus = remember { FocusRequester() }
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+        OutlinedButton(onClick = { searching = true }, modifier = Modifier.focusRequester(searchFocus)) {
+            val label = filter.search.ifBlank { null }?.let { stringResource(R.string.vod_search_for, it) }
+            Text(label ?: stringResource(R.string.vod_search))
+        }
+        if (state.years.isNotEmpty()) {
+            OutlinedButton(onClick = { pickingYear = true }) {
+                Text(year?.title ?: stringResource(R.string.vod_any_year))
+            }
+        }
+        if (!filter.isEmpty) {
+            OutlinedButton(onClick = {
+                // Clear goes away with the filter; keep focus in the header rather than losing it to the rail.
+                searchFocus.requestFocus()
+                actions.onSearch("")
+                actions.onSelectYear(null)
+            }) { Text(stringResource(R.string.vod_clear_filter)) }
+        }
+    }
+    if (searching) {
+        TextInputDialog(
+            title = stringResource(R.string.vod_search),
+            initial = filter.search,
+            hint = stringResource(R.string.vod_search_hint),
+            onConfirm = {
+                searching = false
+                actions.onSearch(it)
+            },
+            onDismiss = { searching = false },
+        )
+    }
+    if (pickingYear) {
+        ChoiceDialog(
+            title = stringResource(R.string.vod_year),
+            options = listOf(ChoiceOption(ANY_YEAR, stringResource(R.string.vod_any_year))) +
+                state.years.map { ChoiceOption(it.id, it.title) },
+            selectedKey = filter.yearId ?: ANY_YEAR,
+            onSelect = {
+                pickingYear = false
+                actions.onSelectYear(it.takeUnless { key -> key == ANY_YEAR })
+            },
+            onDismiss = { pickingYear = false },
+        )
+    }
+}
+
+/** The year choice that lifts the filter; not a portal year id. */
+private const val ANY_YEAR = "portalis:any-year"
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -220,6 +297,7 @@ private fun VodBrowsePreview() {
             onScrolledTo = {},
             onRetry = {},
             onOpen = {},
+            filterActions = FilterActions(onSearch = {}, onSelectYear = {}),
         )
     }
 }

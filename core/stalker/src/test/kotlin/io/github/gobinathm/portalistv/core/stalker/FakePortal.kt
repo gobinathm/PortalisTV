@@ -24,6 +24,7 @@ class FakePortal(
         "create_link" to "create_link",
         "get_short_epg" to "get_short_epg",
         "vod/get_categories" to "vod_categories",
+        "vod/get_years" to "vod_years",
         "vod/get_ordered_list" to "vod_list",
         "vod/create_link" to "vod_create_link",
     )

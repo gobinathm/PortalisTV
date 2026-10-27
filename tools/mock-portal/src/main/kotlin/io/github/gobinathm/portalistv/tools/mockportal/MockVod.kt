@@ -16,12 +16,24 @@ data class MockVod(
     val seasons: List<Int> = emptyList(),
 ) {
     val isSeries: Boolean get() = seasons.isNotEmpty()
+
+    /** Spread over a few decades, so the year filter has something to narrow. */
+    val year: Int get() = FIRST_YEAR + id % YEAR_SPAN
+
+    /** Two made-up names taking turns, so search by actor finds half the titles. */
+    val actors: String get() = if (id % 2 == 0) "Alex Example, Robin Placeholder" else "Sam Sample"
+
+    private companion object {
+        const val FIRST_YEAR = 1990
+        const val YEAR_SPAN = 35
+    }
 }
 
 /**
  * The on-demand calls, shaped like a current Ministra portal: lists are drilled into with
  * `movie_id`, `season_id` and `episode_id`, and movies and episodes play through their file
- * (`/media/file_<id>.mpg`).
+ * (`/media/file_<id>.mpg`). Lists can be narrowed with `search` (title or actors) and `years`,
+ * whose ids [years] lists per category.
  */
 internal class MockVodApi(private val catalog: Catalog) {
     fun categories() = buildJsonArray {
@@ -29,12 +41,23 @@ internal class MockVodApi(private val catalog: Catalog) {
         catalog.vodCategories.forEach { (id, title) -> add(category(id, title)) }
     }
 
+    /** The years a category's titles are from, oldest first after the catch-all, as portals list them. */
+    fun years(query: Map<String, String>) = buildJsonArray {
+        add(yearJson("*"))
+        val years = inCategory(query["category"] ?: "*").map { it.year }.distinct().sorted()
+        years.forEach { add(yearJson(it.toString())) }
+    }
+
     fun orderedList(query: Map<String, String>): JsonObject {
         val movieId = query["movie_id"]?.toIntOrNull()
         val page = query["p"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
         val entries: List<JsonObject> = if (movieId == null) {
-            val category = query["category"] ?: "*"
-            catalog.vod.filter { category == "*" || it.categoryId == category }.reversed().map(::itemJson)
+            val search = query["search"].orEmpty().trim()
+            val year = query["years"]?.toIntOrNull()
+            inCategory(query["category"] ?: "*")
+                .filter { search.isEmpty() || it.name.contains(search, true) || it.actors.contains(search, true) }
+                .filter { year == null || it.year == year }
+                .reversed().map(::itemJson)
         } else {
             contents(movieId, query["season_id"]?.toIntOrNull() ?: 0, query["episode_id"]?.toIntOrNull() ?: 0)
         }
@@ -46,6 +69,8 @@ internal class MockVodApi(private val catalog: Catalog) {
             put("data", buildJsonArray { pageEntries.forEach(::add) })
         }
     }
+
+    private fun inCategory(category: String) = catalog.vod.filter { category == "*" || it.categoryId == category }
 
     /** `/media/file_<id>.mpg` for a file; anything else plays nothing, as on real portals. */
     fun createLink(query: Map<String, String>): JsonElement {
@@ -103,7 +128,8 @@ internal class MockVodApi(private val catalog: Catalog) {
         put("name", item.name)
         put("description", "A freely licensed test ${if (item.isSeries) "series" else "movie"}.")
         put("screenshot_uri", "")
-        put("year", "2008")
+        put("year", item.year.toString())
+        put("actors", item.actors)
         put("rating_imdb", 0)
         put("genres_str", "Test")
         put("time", if (item.isSeries) "0" else "10")
@@ -111,6 +137,11 @@ internal class MockVodApi(private val catalog: Catalog) {
         put("is_series", if (item.isSeries) "1" else "0")
         put("censored", "0")
         put("category_id", item.categoryId)
+    }
+
+    private fun yearJson(year: String) = buildJsonObject {
+        put("id", year)
+        put("title", year)
     }
 
     private fun category(id: String, title: String) = buildJsonObject {

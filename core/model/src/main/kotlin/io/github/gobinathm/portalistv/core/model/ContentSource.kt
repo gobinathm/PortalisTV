@@ -32,8 +32,12 @@ interface ContentSource {
     /** On-demand categories; empty when the source has no on-demand content. */
     suspend fun vodCategories(): List<VodCategory> = emptyList()
 
-    /** One page of an on-demand category, newest first. Pages start at 1. */
-    suspend fun vodItems(categoryId: String, page: Int): PagedResult<VodItem> = PagedResult(emptyList(), 0, 1)
+    /** One page of an on-demand category, newest first, narrowed by [filter]. Pages start at 1. */
+    suspend fun vodItems(categoryId: String, page: Int, filter: VodFilter = VodFilter()): PagedResult<VodItem> =
+        PagedResult(emptyList(), 0, 1)
+
+    /** The years an on-demand category can be filtered by; empty when the source can't filter by year. */
+    suspend fun vodYears(categoryId: String): List<VodYear> = emptyList()
 
     /** A series' seasons, in order. */
     suspend fun seasons(series: VodItem): List<Season> = emptyList()
@@ -84,6 +88,17 @@ data class VodItem(
     /** Opaque to the app; only the source that produced the item understands it. */
     val playbackRef: String?,
 )
+
+/**
+ * Narrows an on-demand list: [search] matches titles (and, on most portals, actors); [yearId] is
+ * a [VodYear.id]. Both empty lists everything.
+ */
+data class VodFilter(val search: String = "", val yearId: String? = null) {
+    val isEmpty: Boolean get() = search.isBlank() && yearId == null
+}
+
+/** A year (or range of years) an on-demand list can be filtered by. */
+data class VodYear(val id: String, val title: String)
 
 data class Season(val id: String, val number: Int?, val title: String)
 

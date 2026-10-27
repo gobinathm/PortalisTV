@@ -44,16 +44,36 @@ suspend fun StalkerClient.vodCategories(section: VodSection): List<Genre> =
         Genre(id = id, title = category.string("title") ?: id, censored = category.flag("censored"))
     }
 
-/** One page of a category, newest first. Pages start at 1. */
-suspend fun StalkerClient.vodPage(section: VodSection, categoryId: String, page: Int): Page<VodItem> =
-    vodList(
-        section.type,
-        "category" to categoryId,
-        "genre" to "*",
-        "sortby" to "added",
-        "fav" to "0",
-        "p" to page.toString(),
-    )
+/**
+ * One page of a category, newest first. Pages start at 1. [search] matches titles on the portal;
+ * [yearId] is an id from [vodYears]. Portals that don't filter ignore them and send the whole category.
+ */
+@Suppress("SpreadOperator") // At most two optional parameters; the copy is negligible next to the request.
+suspend fun StalkerClient.vodPage(
+    section: VodSection,
+    categoryId: String,
+    page: Int,
+    search: String? = null,
+    yearId: String? = null,
+): Page<VodItem> = vodList(
+    section.type,
+    "category" to categoryId,
+    "genre" to "*",
+    "sortby" to "added",
+    "fav" to "0",
+    "p" to page.toString(),
+    *listOfNotNull(search?.let { "search" to it }, yearId?.let { "years" to it }).toTypedArray(),
+)
+
+/** A year (or range of years) the portal can filter a category by. */
+data class VodYear(val id: String, val title: String)
+
+/** The years [vodPage] can filter a category by, as the portal lists them; empty when it doesn't. */
+suspend fun StalkerClient.vodYears(section: VodSection, categoryId: String): List<VodYear> =
+    call(section.type, "get_years", "category" to categoryId).objects().mapNotNull { year ->
+        val id = year.string("id") ?: return@mapNotNull null
+        VodYear(id, year.string("title") ?: id)
+    }.filter { it.id != "*" }
 
 /**
  * Drills into a series in [section]: its seasons, a season's episodes (with [seasonId]), or an

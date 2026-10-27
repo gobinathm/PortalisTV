@@ -15,7 +15,9 @@ import io.github.gobinathm.portalistv.core.datastore.SettingsRepository
 import io.github.gobinathm.portalistv.core.model.ALL_CATEGORIES
 import io.github.gobinathm.portalistv.core.model.ContentSource
 import io.github.gobinathm.portalistv.core.model.VodCategory
+import io.github.gobinathm.portalistv.core.model.VodFilter
 import io.github.gobinathm.portalistv.core.model.VodItem
+import io.github.gobinathm.portalistv.core.model.VodYear
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +34,10 @@ data class VodBrowseUiState(
     val categories: List<VodCategory> = emptyList(),
     val selectedCategoryId: String = ALL_CATEGORIES,
     val pages: PagedItems<VodItem> = PagedItems(ALL_CATEGORIES),
+    /** The search and year the grid is narrowed by; the search stays when the category changes, the year doesn't. */
+    val filter: VodFilter = VodFilter(),
+    /** The years the selected category can be filtered by; empty when the portal lists none. */
+    val years: List<VodYear> = emptyList(),
     val loadingCategories: Boolean = true,
     val loadingItems: Boolean = false,
     /** The last portal request failed; [VodBrowseViewModel.retry] repeats it. */
@@ -48,7 +54,7 @@ data class VodBrowseUiState(
  * loaded page by page as it scrolls. Adult content is left out unless the settings allow it.
  */
 @HiltViewModel
-@Suppress("LongParameterList") // Injected collaborators; each is a separate concern.
+@Suppress("LongParameterList", "TooManyFunctions") // Injected collaborators; one entry point per user action.
 class VodBrowseViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: ProfileRepository,
@@ -72,6 +78,7 @@ class VodBrowseViewModel @Inject constructor(
     private var source: ContentSource? = null
     private var showAdult = false
     private var itemsJob: Job? = null
+    private var yearsJob: Job? = null
 
     init {
         loadCategories()
@@ -115,12 +122,49 @@ class VodBrowseViewModel @Inject constructor(
         if (wasOpening) open(ALL_CATEGORIES)
     }
 
+    /** Narrows the grid to titles (and, on most portals, actors) matching [text]; blank shows everything. */
+    fun search(text: String) {
+        val filter = _state.value.filter.copy(search = text.trim())
+        if (filter != _state.value.filter) reload(filter)
+    }
+
+    /** Narrows the grid to one of [VodBrowseUiState.years]; null shows every year. */
+    fun selectYear(yearId: String?) {
+        val filter = _state.value.filter.copy(yearId = yearId)
+        if (filter != _state.value.filter) reload(filter)
+    }
+
     private fun open(categoryId: String) {
         if (categoryId == _state.value.selectedCategoryId && itemsJob != null) return
+        _state.update { it.copy(selectedCategoryId = categoryId, years = emptyList()) }
+        // Year ids are per category, so a year picked in another one no longer applies.
+        reload(_state.value.filter.copy(yearId = null))
+        loadYears(categoryId)
+    }
+
+    /** Starts the selected category over with [filter]. */
+    private fun reload(filter: VodFilter) {
         itemsJob?.cancel()
         itemsJob = null
-        _state.update { it.copy(selectedCategoryId = categoryId, pages = PagedItems(categoryId), loadingItems = false) }
+        _state.update { it.copy(filter = filter, pages = PagedItems(it.selectedCategoryId), loadingItems = false) }
         loadMore()
+    }
+
+    /** The year filter is optional: a portal that lists no years, or fails to, just doesn't offer it. */
+    private fun loadYears(categoryId: String) {
+        val contentSource = source ?: return
+        yearsJob?.cancel()
+        yearsJob = viewModelScope.launch {
+            try {
+                // Portals list them oldest first; recent years are the ones people look for.
+                val years = contentSource.vodYears(categoryId).sortedByDescending { it.title }
+                _state.update { if (it.selectedCategoryId == categoryId) it.copy(years = years) else it }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: IOException) {
+                Log.w(TAG, e) { "On-demand years could not be loaded" }
+            }
+        }
     }
 
     /** Called with the last grid index on screen; loads the next page when it gets close. */
@@ -160,7 +204,7 @@ class VodBrowseViewModel @Inject constructor(
                 // A page can be all adult items; keep going until something new shows or the list ends.
                 do {
                     val pages = _state.value.pages
-                    val result = contentSource.vodItems(pages.categoryId, pages.nextPage)
+                    val result = contentSource.vodItems(pages.categoryId, pages.nextPage, _state.value.filter)
                     val items = result.items.filter { showAdult || !it.adult }
                     seen.remember(items)
                     val next = pages.append(pages.nextPage, items, result.pageCount, result.totalItems) { it.id }

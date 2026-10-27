@@ -20,10 +20,10 @@ import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceDialog
 import io.github.gobinathm.portalistv.core.designsystem.component.ChoiceOption
+import io.github.gobinathm.portalistv.core.designsystem.component.TextInputDialog
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.feature.profiles.R
 import io.github.gobinathm.portalistv.feature.profiles.component.MessageDialog
-import io.github.gobinathm.portalistv.feature.profiles.component.TextInputDialog
 
 /** Where the backup flow is waiting for the user. */
 private sealed interface BackupPrompt {

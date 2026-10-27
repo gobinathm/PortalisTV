@@ -9,6 +9,14 @@
     <string name="vod_empty">Nothing in this category.</string>
     <string name="vod_failed">This couldn\'t be loaded.</string>
     <string name="vod_retry">Try again</string>
+    <string name="vod_no_matches">Nothing matches. Try other words, another year, or Clear.</string>
+    <string name="vod_search">Search</string>
+    <!-- %1$s is what the user searched for. -->
+    <string name="vod_search_for">Search: %1$s</string>
+    <string name="vod_search_hint">A title or an actor\'s name</string>
+    <string name="vod_year">Year</string>
+    <string name="vod_any_year">Any year</string>
+    <string name="vod_clear_filter">Clear</string>
 
     <string name="vod_play">Play</string>
     <!-- %1$s is a time such as 12:34. -->

@@ -11,4 +11,7 @@
     <string name="favorite_show_on_home">Show on Home</string>
     <string name="favorite_hide_from_home">Hide from Home</string>
     <string name="favorite_remove">Remove from favorites</string>
+
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Cancel</string>
 </resources>

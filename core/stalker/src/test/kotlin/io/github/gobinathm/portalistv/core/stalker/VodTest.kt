@@ -59,6 +59,25 @@ class VodTest {
     }
 
     @Test
+    fun `searches and filters by year only when asked`() = runTest {
+        client.vodPage(VodSection.MOVIES, "12", page = 1)
+        client.vodPage(VodSection.MOVIES, "12", page = 1, search = "night fall", yearId = "2024")
+
+        val (plain, filtered) = portal.requestsFor("get_ordered_list").map { it.url }
+        assertThat(plain.queryParameterNames).containsNoneOf("search", "years")
+        assertThat(filtered.queryParameter("search")).isEqualTo("night fall")
+        assertThat(filtered.queryParameter("years")).isEqualTo("2024")
+    }
+
+    @Test
+    fun `lists a category's years without the catch-all`() = runTest {
+        val years = client.vodYears(VodSection.MOVIES, "12")
+
+        assertThat(years).containsExactly(VodYear("1999", "1999"), VodYear("2024", "2024")).inOrder()
+        assertThat(portal.requestsFor("get_years").single().url.queryParameter("category")).isEqualTo("12")
+    }
+
+    @Test
     fun `drills into seasons, episodes and files`() = runTest {
         portal.fixtures["vod/get_ordered_list"] = "vod_seasons"
         val seasons = client.seriesContents(VodSection.MOVIES, "502").items

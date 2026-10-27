@@ -11,8 +11,10 @@ import io.github.gobinathm.portalistv.core.model.Season
 import io.github.gobinathm.portalistv.core.model.SourceAccount
 import io.github.gobinathm.portalistv.core.model.SourceException
 import io.github.gobinathm.portalistv.core.model.VodCategory
+import io.github.gobinathm.portalistv.core.model.VodFilter
 import io.github.gobinathm.portalistv.core.model.VodItem
 import io.github.gobinathm.portalistv.core.model.VodPlayback
+import io.github.gobinathm.portalistv.core.model.VodYear
 import io.github.gobinathm.portalistv.core.stalker.AccountBlockedException
 import io.github.gobinathm.portalistv.core.stalker.AuthorizationException
 import io.github.gobinathm.portalistv.core.stalker.Channel
@@ -27,6 +29,7 @@ import io.github.gobinathm.portalistv.core.stalker.seriesContents
 import io.github.gobinathm.portalistv.core.stalker.vodCategories
 import io.github.gobinathm.portalistv.core.stalker.vodLink
 import io.github.gobinathm.portalistv.core.stalker.vodPage
+import io.github.gobinathm.portalistv.core.stalker.vodYears
 import io.github.gobinathm.portalistv.core.stalker.VodItem as PortalVodItem
 
 /** [ContentSource] for Stalker/Ministra portals. Channels without a logo get one from [logos] if it has one. */
@@ -67,9 +70,14 @@ internal class StalkerContentSource(
         client.vodCategories(VodSection.MOVIES).map { VodCategory(it.id, it.title, it.censored) }
     }
 
-    override suspend fun vodItems(categoryId: String, page: Int): PagedResult<VodItem> = mapErrors {
-        val result = client.vodPage(VodSection.MOVIES, categoryId, page)
+    override suspend fun vodItems(categoryId: String, page: Int, filter: VodFilter): PagedResult<VodItem> = mapErrors {
+        val search = filter.search.trim().takeIf { it.isNotEmpty() }
+        val result = client.vodPage(VodSection.MOVIES, categoryId, page, search = search, yearId = filter.yearId)
         PagedResult(result.items.map { it.toVod() }, result.totalItems, result.pageCount)
+    }
+
+    override suspend fun vodYears(categoryId: String): List<VodYear> = mapErrors {
+        client.vodYears(VodSection.MOVIES, categoryId).map { VodYear(it.id, it.title) }
     }
 
     override suspend fun seasons(series: VodItem): List<Season> = mapErrors {

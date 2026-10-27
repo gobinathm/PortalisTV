@@ -12,6 +12,7 @@ import io.github.gobinathm.portalistv.core.stalker.seriesContents
 import io.github.gobinathm.portalistv.core.stalker.vodCategories
 import io.github.gobinathm.portalistv.core.stalker.vodLink
 import io.github.gobinathm.portalistv.core.stalker.vodPage
+import io.github.gobinathm.portalistv.core.stalker.vodYears
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.text.SimpleDateFormat
@@ -85,6 +86,8 @@ private suspend fun runSteps(client: StalkerClient): Boolean {
         },
         "vod" to { vodSummary(client, VodSection.MOVIES) },
         "series" to { vodSummary(client, VodSection.SERIES) },
+        "vod_search" to { searchSummary(client) },
+        "vod_years" to { yearsSummary(client) },
         "create_link" to {
             val cmd = channelCmd ?: error("no channel to resolve")
             "stream scheme ${client.createLink(cmd).substringBefore(':')}"
@@ -131,6 +134,41 @@ private suspend fun seriesSummary(client: StalkerClient, section: VodSection, se
     return "series: ${episodes.size} episodes in a season, episode $link"
 }
 
+/**
+ * Whether the portal searches: looks up a word from the newest title across all movies and
+ * compares with the unfiltered total. A portal that ignores the search sends everything.
+ */
+private suspend fun searchSummary(client: StalkerClient): String {
+    val all = client.vodPage(VodSection.MOVIES, ALL, page = 1)
+    val word = all.items.asSequence().flatMap { it.name.split(' ') }.firstOrNull { it.length >= MIN_SEARCH_WORD }
+        ?: return "no title to search for"
+    val found = client.vodPage(VodSection.MOVIES, ALL, page = 1, search = word)
+    val matching = found.items.count { it.name.contains(word, ignoreCase = true) }
+    // Whether search also covers cast: look up a surname from the first title that lists actors.
+    val actor = all.items.firstNotNullOfOrNull { item ->
+        item.actors?.split(',')?.firstOrNull()?.trim()?.substringAfterLast(' ')
+            ?.takeIf { it.length >= MIN_SEARCH_WORD }
+    }
+    val byActor = actor?.let { client.vodPage(VodSection.MOVIES, ALL, page = 1, search = it) }
+    val byActorSummary = byActor?.let { page ->
+        val listing = page.items.count { it.actors?.contains(actor, ignoreCase = true) == true }
+        "${page.totalItems} found, $listing of ${page.items.size} list the actor"
+    } ?: "no actors"
+    return "${found.totalItems} of ${all.totalItems} titles found; $matching of ${found.items.size} on page 1 match" +
+        "; by actor: $byActorSummary"
+}
+
+/** Whether the portal lists years, and whether filtering by one narrows the list. */
+private suspend fun yearsSummary(client: StalkerClient): String {
+    val years = client.vodYears(VodSection.MOVIES, ALL)
+    val year = years.firstOrNull() ?: return "no years listed"
+    val all = client.vodPage(VodSection.MOVIES, ALL, page = 1)
+    val filtered = client.vodPage(VodSection.MOVIES, ALL, page = 1, yearId = year.id)
+    val matching = filtered.items.count { it.year == year.title }
+    return "${years.size} years (e.g. ${year.title}); ${filtered.totalItems} of ${all.totalItems} titles for it, " +
+        "$matching of ${filtered.items.size} on page 1 match"
+}
+
 /** The scheme of the stream link for an item's first file, as the app resolves it. */
 private suspend fun fileLink(
     client: StalkerClient,
@@ -154,6 +192,8 @@ private suspend fun outcome(block: suspend () -> String): String =
     runCatching { block() }.getOrElse { "failed (${it.javaClass.simpleName})" }
 
 private const val SEARCH_CATEGORIES = 6
+private const val ALL = "*"
+private const val MIN_SEARCH_WORD = 4
 
 private const val EPG_SAMPLE = 5
 private const val LONG_EPG_SIZE = 30
