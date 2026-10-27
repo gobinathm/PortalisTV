@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -25,6 +26,7 @@ import androidx.tv.material3.Text
 import io.github.gobinathm.portalistv.core.designsystem.theme.Spacing
 import io.github.gobinathm.portalistv.core.model.CategoryNode
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 /** Pause on a category before it's selected, so moving down the rail doesn't load every one. */
 private const val SELECT_ON_FOCUS_DELAY_MS = 400L
@@ -121,11 +123,15 @@ fun CategoryRail(
             )
         }
     }
-    LaunchedEffect(focused) {
-        // Group headers only open and close; resting on one selects nothing.
-        val id = focused?.takeIf { groupKeyOfEntry(it) == null } ?: return@LaunchedEffect
-        delay(SELECT_ON_FOCUS_DELAY_MS)
-        if (id != currentSelection) onFocusSelect(id)
+    val currentOnFocusSelect by rememberUpdatedState(onFocusSelect)
+    // Watched rather than read while composing: each move between entries would redraw the whole rail.
+    LaunchedEffect(Unit) {
+        snapshotFlow { focused }.collectLatest { entryId ->
+            // Group headers only open and close; resting on one selects nothing.
+            val id = entryId?.takeIf { groupKeyOfEntry(it) == null } ?: return@collectLatest
+            delay(SELECT_ON_FOCUS_DELAY_MS)
+            if (id != currentSelection) currentOnFocusSelect(id)
+        }
     }
     LaunchedEffect(entries.isNotEmpty()) {
         val index = entries.indexOfFirst { it.id == currentSelection }

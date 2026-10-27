@@ -123,9 +123,11 @@ private fun VodBrowseContent(
         }
         var expanded by remember(nodes) { mutableStateOf(groupOf(nodes, state.selectedCategoryId) { it.id }) }
         val everything = stringResource(R.string.vod_all)
-        val label = { category: VodCategory -> if (category.id == ALL_CATEGORIES) everything else category.title }
+        val label = remember(everything) { labelsWith(everything) }
+        // Kept across page loads, which update the screen often; a new list would redraw the whole rail.
+        val entries = remember(nodes, expanded, label) { railEntries(nodes, expanded, { it.id }, label, { it.mark() }) }
         CategoryRail(
-            entries = railEntries(nodes, expanded, { it.id }, label, { it.mark() }),
+            entries = entries,
             selectedId = state.selectedCategoryId,
             onSelect = onSelectCategory,
             modifier = Modifier.width(RailWidth).fillMaxHeight(),
@@ -284,6 +286,9 @@ private fun PosterGrid(
         snapshotFlow { gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }.collect(onScrolledTo)
     }
 }
+
+private fun labelsWith(everything: String): (VodCategory) -> String =
+    { category -> if (category.id == ALL_CATEGORIES) everything else category.title }
 
 @Composable
 private fun VodCategory.label(): String = if (id == ALL_CATEGORIES) stringResource(R.string.vod_all) else title

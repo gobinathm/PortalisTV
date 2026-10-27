@@ -28,7 +28,10 @@ data class PagedItems<T>(
     fun needsMore(lastVisibleIndex: Int): Boolean = !complete && lastVisibleIndex >= items.size - PREFETCH_DISTANCE
 
     companion object {
-        /** About two rows of a page ahead, so scrolling rarely reaches the end of what's loaded. */
-        const val PREFETCH_DISTANCE = 21
+        /**
+         * About five rows of posters ahead: loads fetch a few pages at a time, so they start early
+         * enough that scrolling rarely reaches the end of what's loaded.
+         */
+        const val PREFETCH_DISTANCE = 42
     }
 }

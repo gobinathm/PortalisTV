@@ -201,16 +201,22 @@ class VodBrowseViewModel @Inject constructor(
         _state.update { it.copy(loadingItems = true, failed = false) }
         itemsJob = viewModelScope.launch {
             try {
-                // A page can be all adult items; keep going until something new shows or the list ends.
+                val start = _state.value.pages
+                val filter = _state.value.filter
+                // The first page shows at once. Later ones come a few at a time and reach the grid in
+                // one update: every update lays the screen out again, which stutters scrolling on a TV.
+                // A page can be all adult items, so keep going until something new shows or the list ends.
+                val batch = if (start.loadedPages == 0) 1 else PAGES_PER_LOAD
+                var pages = start
+                var fetched = 0
                 do {
-                    val pages = _state.value.pages
-                    val result = contentSource.vodItems(pages.categoryId, pages.nextPage, _state.value.filter)
+                    val result = contentSource.vodItems(pages.categoryId, pages.nextPage, filter)
                     val items = result.items.filter { showAdult || !it.adult }
                     seen.remember(items)
-                    val next = pages.append(pages.nextPage, items, result.pageCount, result.totalItems) { it.id }
-                    _state.update { it.copy(pages = next) }
-                } while (next.items.size == pages.items.size && !next.complete)
-                _state.update { it.copy(loadingItems = false) }
+                    pages = pages.append(pages.nextPage, items, result.pageCount, result.totalItems) { it.id }
+                    fetched++
+                } while (!pages.complete && (fetched < batch || pages.items.size == start.items.size))
+                _state.update { it.copy(pages = pages, loadingItems = false) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: IOException) {
@@ -224,5 +230,8 @@ class VodBrowseViewModel @Inject constructor(
         const val ARG_PROFILE_ID = "profileId"
         const val ARG_CATEGORY_ID = "categoryId"
         private const val TAG = "Vod"
+
+        /** Pages fetched per load after the first; portals send about 14 titles a page. */
+        private const val PAGES_PER_LOAD = 3
     }
 }

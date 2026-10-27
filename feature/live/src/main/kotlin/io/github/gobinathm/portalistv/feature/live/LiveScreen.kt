@@ -153,8 +153,12 @@ private fun LiveContent(
         }
         var expanded by remember(nodes) { mutableStateOf(groupOf(nodes, state.selectedCategoryId) { it.id }) }
         val labels = categoryLabels()
+        // Kept across page and guide loads, which update the screen often; a new list would redraw the whole rail.
+        val entries = remember(nodes, expanded, labels) {
+            railEntries(nodes, expanded, { it.id }, labels, { it.mark() })
+        }
         CategoryRail(
-            entries = railEntries(nodes, expanded, { it.id }, { labels(it) }, { it.mark() }),
+            entries = entries,
             selectedId = state.selectedCategoryId,
             onSelect = actions.onSelectCategory,
             modifier = Modifier.width(320.dp).fillMaxHeight(),
@@ -278,12 +282,14 @@ private fun ChannelList(state: LiveUiState, imageLoader: ImageLoader?, actions: 
 private fun categoryLabels(): (LiveCategory) -> String {
     val all = stringResource(R.string.live_all_channels)
     val favorites = stringResource(R.string.live_favorites)
-    return { category ->
-        when (category.id) {
-            ALL_CATEGORIES -> all
-            FAVORITES_CATEGORY -> favorites
-            else -> category.title
-        }
+    return remember(all, favorites) { labelsWith(all, favorites) }
+}
+
+private fun labelsWith(all: String, favorites: String): (LiveCategory) -> String = { category ->
+    when (category.id) {
+        ALL_CATEGORIES -> all
+        FAVORITES_CATEGORY -> favorites
+        else -> category.title
     }
 }
 
